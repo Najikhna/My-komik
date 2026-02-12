@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V17.1 (No Crop)</title>
+    <title>Komik Library V20 (Ultimate Cloud)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -111,37 +111,20 @@
         #batchBar { position: fixed; bottom: -100px; left: 0; width: 100%; background: #111; border-top: 1px solid var(--accent); padding: 15px; display: flex; justify-content: space-around; z-index: 95; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #batchBar.show { bottom: 0; }
         .batch-btn { background: none; border: 1px solid #555; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+        .batch-btn.danger { border-color: var(--danger); color: var(--danger); }
+
         #toastBox { visibility: hidden; min-width: 250px; background-color: #222; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); border: 1px solid var(--accent); opacity: 0; transition: 0.3s; }
         #toastBox.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        /* LOADING BAR */
+        #loadingBar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); width: 0%; z-index: 200; transition: 0.3s; }
 
         /* DETAIL MODAL (FIXED NO CROP) */
         .detail-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; overflow-y: auto; display: none; padding: 20px 0; animation: fadeIn 0.3s; }
         .detail-content { background: #1a1a1a; width: 90%; max-width: 500px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; box-shadow: 0 10px 40px black; }
-        
-        /* HEADER BARU: Menampilkan gambar utuh */
-        .detail-header { 
-            position: relative; 
-            height: 380px; /* Cukup tinggi untuk cover vertikal */
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            background: #000;
-        }
-        .detail-cover-bg { 
-            position: absolute; inset: 0; width: 100%; height: 100%; 
-            object-fit: cover; opacity: 0.4; filter: blur(15px); /* Background Blur */
-        }
-        .detail-cover-fg { 
-            position: relative; 
-            height: 90%; /* Fit Height */
-            width: auto; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.8); 
-            border: 2px solid var(--accent); 
-            border-radius: 8px;
-            z-index: 2; 
-        }
-        
+        .detail-header { position: relative; height: 380px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; }
+        .detail-cover-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; filter: blur(15px); }
+        .detail-cover-fg { position: relative; height: 90%; width: auto; box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; }
         .detail-close { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 210; backdrop-filter: blur(4px); transition: 0.2s; }
         .detail-close:active { transform: scale(0.9); }
         
@@ -173,9 +156,13 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .blink { animation: blink 0.3s; }
+        @keyframes blink { 0%, 100% { transform: translateY(-50%) scaleY(1); } 50% { transform: translateY(-50%) scaleY(0.1); } }
     </style>
 </head>
 <body>
+
+    <div id="loadingBar"></div>
 
     <div id="loginSection">
         <div class="login-box">
@@ -227,9 +214,7 @@
             </select>
             <div id="backupMenu">
                 <div class="sidebar-header">DATA</div>
-                <button onclick="exportData()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:6px; margin-bottom:5px; text-align:left;">📥 Backup Data</button>
-                <input type="file" id="importFile" hidden onchange="importData(this)">
-                <button onclick="document.getElementById('importFile').click()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:6px; text-align:left;">📤 Restore Data</button>
+                <button onclick="exportData()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:6px; margin-bottom:5px; text-align:left;">📥 Backup Local</button>
                 <div style="margin-top:20px; font-size:0.7rem; color:#aaa; text-align:center">Total: <span id="totalCount">0</span> Komik</div>
             </div>
         </aside>
@@ -268,7 +253,7 @@
 
     <div class="modal" id="comicModal">
         <div class="modal-content">
-            <h3>Editor Komik</h3>
+            <h3>Editor Cloud</h3>
             <input type="hidden" id="editId">
             <button class="api-btn" onclick="fetchFromAPI()"><span class="material-icons">search</span> Cari Otomatis (Jikan)</button>
             <label>Judul</label><input type="text" id="inpTitle">
@@ -291,262 +276,365 @@
             <label>Review</label><textarea id="inpReview" rows="2"></textarea>
             <label>Link Baca</label><input type="text" id="inpSource" placeholder="https://...">
             <label>Cover</label><div style="display:flex; gap:5px"><input type="file" id="inpImgFile" style="font-size:0.7rem"><input type="text" id="inpImgUrl" placeholder="URL"></div>
-            <button onclick="saveComic()" style="width:100%; padding:12px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:10px; margin-top:10px">SIMPAN</button>
+            
+            <button onclick="saveComicToCloud()" style="width:100%; padding:12px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:10px; margin-top:10px">SIMPAN KE CLOUD</button>
             <button onclick="closeModal()" style="width:100%; padding:10px; background:transparent; border:1px solid #555; color:#aaa; border-radius:10px; margin-top:5px">BATAL</button>
-            <button onclick="deleteComic()" id="btnDelete" style="width:100%; padding:10px; background:transparent; color:#ff4d4d; border:none; margin-top:5px; display:none">Hapus</button>
+            <button onclick="deleteComicFromCloud()" id="btnDelete" style="width:100%; padding:10px; background:transparent; color:#ff4d4d; border:none; margin-top:5px; display:none">Hapus</button>
         </div>
     </div>
 
-<script>
-    let comics = []; try { comics = JSON.parse(localStorage.getItem('myComicsV16')) || []; } catch(e) { comics=[]; }
-    let selectedGenres = new Set();
-    let isBatchMode = false;
-    let selectedIds = new Set();
-    let currentUser = null; 
-    let currentCategory = 'All';
-    let currentDetailId = null;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    // LOGIN & EYE
-    function togglePassword(e) {
-        if(e) { e.preventDefault(); e.stopPropagation(); }
-        const inp = document.getElementById('loginPass');
-        const icon = document.getElementById('eyeIcon');
-        icon.classList.remove('blink'); void icon.offsetWidth; icon.classList.add('blink'); 
-        if(inp.type === 'password') { inp.type = 'text'; icon.innerText = 'visibility'; }
-        else { inp.type = 'password'; icon.innerText = 'visibility_off'; }
-        inp.focus();
-    }
-
-    function attemptLogin() {
-        const u = document.getElementById('loginUser').value;
-        const p = document.getElementById('loginPass').value;
-        if(u==='admin' && p==='adminsukamommy') loginSuccess('admin');
-        else if(u==='guest' && p==='guest-guest') loginSuccess('guest');
-        else document.getElementById('loginError').innerText = "Salah!";
-    }
-
-    function loginSuccess(role) {
-        currentUser = role;
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        if(role === 'guest') {
-            document.getElementById('fabBtn').style.display = 'none';
-            document.getElementById('backupMenu').style.display = 'none';
-            document.getElementById('batchBtnHeader').style.display = 'none';
-            document.getElementById('btnEditDetail').style.display = 'none';
-        } else {
-            document.getElementById('fabBtn').style.display = 'flex';
-            document.getElementById('backupMenu').style.display = 'block';
-            document.getElementById('batchBtnHeader').style.display = 'flex';
-            document.getElementById('btnEditDetail').style.display = 'flex';
-        }
-        init();
-    }
-
-    function doLogout() {
-        currentUser = null;
-        document.getElementById('loginSection').style.display = 'flex';
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('loginUser').value=''; document.getElementById('loginPass').value='';
-    }
-
-    // ANIMATIONS
-    function toggleTheme() {
-        const icon = document.getElementById('themeIcon');
-        icon.classList.add('rotate-active'); 
-        setTimeout(() => icon.classList.remove('rotate-active'), 600);
-        
-        if(document.body.style.background.includes('rgb')) {
-             document.body.style.background = ''; // Image
-             icon.innerText = 'light_mode';
-             localStorage.setItem('theme', 'dark');
-        } else {
-             document.body.style.background = 'rgb(244, 244, 244)';
-             icon.innerText = 'dark_mode';
-             localStorage.setItem('theme', 'light');
-        }
-    }
-
-    function toggleCoverMode() {
-        const list = document.getElementById('comicList');
-        const icon = document.getElementById('iconCover');
-        list.classList.toggle('no-cover');
-        icon.innerText = list.classList.contains('no-cover') ? 'grid_view' : 'image';
-    }
-
-    // API & DATA
-    async function fetchFromAPI() {
-        const title = document.getElementById('inpTitle').value;
-        if(!title) return showToast("Isi judul dulu!");
-        showToast("Mencari...");
-        try {
-            const res = await fetch(`https://api.jikan.moe/v4/manga?q=${title}&limit=1`);
-            const data = await res.json();
-            if(data.data && data.data.length > 0) {
-                const manga = data.data[0];
-                document.getElementById('inpTitle').value = manga.title;
-                document.getElementById('inpAuthor').value = manga.authors[0] ? manga.authors[0].name : 'Unknown';
-                document.getElementById('inpStatus').value = manga.status === 'Publishing' ? 'Ongoing' : 'Completed';
-                document.getElementById('inpTotal').value = manga.chapters || 0;
-                document.getElementById('inpGenres').value = manga.genres.map(g=>g.name).join(', ');
-                document.getElementById('inpSynopsis').value = manga.synopsis || '';
-                document.getElementById('inpImgUrl').value = manga.images.jpg.image_url;
-                
-                if(manga.type === 'Manhwa') document.getElementById('inpCategory').value = 'Manhwa';
-                else if(manga.type === 'Manhua') document.getElementById('inpCategory').value = 'Manhua';
-                else document.getElementById('inpCategory').value = 'Manga';
-                showToast("Ditemukan!");
-            } else { showToast("Tidak ditemukan"); }
-        } catch(e) { showToast("Error API"); }
-    }
-
-    // DETAIL
-    function openDetail(id) {
-        const c = comics.find(x => x.id === id);
-        currentDetailId = id;
-        document.getElementById('detBg').src = c.image;
-        document.getElementById('detFg').src = c.image;
-        document.getElementById('detTitle').innerText = c.title;
-        document.getElementById('detAuthor').innerText = c.author || 'Unknown';
-        document.getElementById('detStatus').innerText = c.status;
-        document.getElementById('detRating').innerText = c.rating || '-';
-        document.getElementById('detTotal').innerText = c.total || '?';
-        document.getElementById('detRead').innerText = c.read || '0';
-        document.getElementById('detSynopsis').innerText = c.synopsis || '-';
-        document.getElementById('detReview').innerText = c.review || '-';
-        
-        const st = document.getElementById('detStatus');
-        if(c.status==='Ongoing') st.style.color='var(--color-ongoing)';
-        else if(c.status==='Completed') st.style.color='var(--color-completed)';
-        else st.style.color='var(--color-hiatus)';
-
-        document.getElementById('detailModal').style.display = 'block';
-    }
-    function closeDetail() { document.getElementById('detailModal').style.display='none'; }
-    function openSourceFromDetail() { const c=comics.find(x=>x.id===currentDetailId); openSource(c.source); }
-    function editFromDetail() { closeDetail(); edit(currentDetailId); }
-
-    // RENDER
-    function init() { if(localStorage.getItem('theme')==='light') toggleTheme(); renderGenres(); applyFilter(); }
-    function filterCategory(cat, el) {
-        currentCategory = cat;
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-        applyFilter();
-    }
-
-    function render(data) {
-        const list = document.getElementById('comicList');
-        if(currentUser === 'admin') document.getElementById('totalCount').innerText = data.length;
-        list.innerHTML = '';
-
-        data.forEach((c, index) => {
-            const img = c.image || 'https://via.placeholder.com/200x300/222/fff?text=No+Cover';
-            const read = parseInt(c.read)||0;
-            const total = parseInt(c.total)||0;
-            const pct = total>0?(read/total)*100:0;
-            const chInfo = total>0?`${read} / ${total}`:`Ch. ${read}`;
-            const starHtml = c.rating>0?`<span class="star-gold">★</span>${c.rating}`:'';
-            
-            let titleClass = c.status==='Ongoing'?'text-ongoing':(c.status==='Completed'?'text-completed':'text-hiatus');
-            
-            let cardAction = `openDetail('${c.id}')`;
-            let titleAction = `openSource('${c.source}')`;
-            if(isBatchMode) { cardAction = `toggleSelect('${c.id}')`; titleAction = `toggleSelect('${c.id}')`; }
-
-            let quickAddBtn = (currentUser==='admin' && !isBatchMode) ? 
-                `<div class="btn-quick-add" onclick="quickAdd('${c.id}', event)">+1</div>` : '';
-
-            const isSelected = selectedIds.has(c.id) ? 'selected' : '';
-            const html = `
-                <div class="comic-card fade-in ${isSelected}" data-status="${c.status}" style="animation-delay:${index*0.05}s">
-                    <div class="card-img-wrapper">
-                        <img src="${img}" class="card-img" onclick="${isBatchMode?cardAction:''}" loading="lazy">
-                        <div class="badge-ch">${read}</div>
-                        ${quickAddBtn}
-                    </div>
-                    <div class="card-overlay" onclick="${cardAction}" style="pointer-events:auto; cursor:pointer">
-                        <div class="card-title ${titleClass}" onclick="event.stopPropagation(); ${titleAction}">${c.title}</div>
-                        <div class="card-meta"><span>${chInfo}</span><span>${starHtml}</span></div>
-                        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
-                    </div>
-                </div>
-            `;
-            list.innerHTML += html;
-        });
-    }
-
-    function openSource(url) { if(!url||url==='undefined')showToast("Link Kosong"); else window.open(url.startsWith('http')?url:'https://'+url, '_blank'); }
-    
-    function saveComic() {
-        const title = document.getElementById('inpTitle').value;
-        if(!title) return showToast("Judul wajib!");
-        const id = document.getElementById('editId').value || Date.now().toString();
-        const existing = comics.find(c => c.id === id);
-        const obj = {
-            id, title,
-            author: document.getElementById('inpAuthor').value,
-            synopsis: document.getElementById('inpSynopsis').value,
-            review: document.getElementById('inpReview').value,
-            category: document.getElementById('inpCategory').value,
-            status: document.getElementById('inpStatus').value,
-            rating: parseInt(document.getElementById('inpRating').value)||0,
-            read: parseInt(document.getElementById('inpRead').value)||0,
-            total: parseInt(document.getElementById('inpTotal').value)||0,
-            genres: document.getElementById('inpGenres').value.split(',').map(s=>s.trim()).filter(s=>s),
-            source: document.getElementById('inpSource').value,
-            dateAdded: existing?existing.dateAdded:Date.now(), lastUpdate: Date.now()
+        const firebaseConfig = {
+            apiKey: "AIzaSyDMBXZWoCVSuEmzqOO2lRKj9Os7tghkM8I",
+            authDomain: "komikbase-db619.firebaseapp.com",
+            databaseURL: "https://komikbase-db619-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "komikbase-db619",
+            storageBucket: "komikbase-db619.firebasestorage.app",
+            messagingSenderId: "291354261575",
+            appId: "1:291354261575:web:b26b707c3892a556ae9962",
+            measurementId: "G-H67QSXQH90"
         };
-        const file = document.getElementById('inpImgFile').files[0];
-        if(file) compressImage(file, res => { obj.image=res; finalize(obj); });
-        else { obj.image = document.getElementById('inpImgUrl').value || (existing?existing.image:''); finalize(obj); }
-    }
 
-    function finalize(obj) {
-        const idx = comics.findIndex(c => c.id === obj.id);
-        if(idx > -1) comics[idx] = obj; else comics.push(obj);
-        save(); closeModal(); showToast("Disimpan!");
-    }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    function edit(id) {
-        const c = comics.find(x => x.id === id);
-        document.getElementById('editId').value = c.id;
-        document.getElementById('inpTitle').value = c.title;
-        document.getElementById('inpAuthor').value = c.author || '';
-        document.getElementById('inpSynopsis').value = c.synopsis || '';
-        document.getElementById('inpReview').value = c.review || '';
-        document.getElementById('inpStatus').value = c.status;
-        document.getElementById('inpRating').value = c.rating;
-        document.getElementById('inpRead').value = c.read;
-        document.getElementById('inpTotal').value = c.total;
-        document.getElementById('inpGenres').value = c.genres.join(', ');
-        document.getElementById('inpSource').value = c.source || '';
-        document.getElementById('inpImgUrl').value = c.image || ''; 
-        document.getElementById('inpCategory').value = c.category || 'Manhwa';
-        document.getElementById('btnDelete').style.display = 'block';
-        document.getElementById('comicModal').style.display = 'flex';
-    }
+        // --- GLOBAL & STATE ---
+        let comics = [];
+        let selectedGenres = new Set();
+        let isBatchMode = false;
+        let selectedIds = new Set();
+        let currentUser = null; 
+        let currentCategory = 'All';
+        let currentDetailId = null;
 
-    // UTILS
-    function save() { localStorage.setItem('myComicsV16', JSON.stringify(comics)); renderGenres(); applyFilter(); }
-    function compressImage(file, cb) { const r=new FileReader(); r.onload=e=>{ const i=new Image(); i.onload=()=>{ const c=document.createElement('canvas'),s=300/i.width; c.width=300; c.height=i.height*s; c.getContext('2d').drawImage(i,0,0,c.width,c.height); cb(c.toDataURL('image/jpeg',0.8)); }; i.src=e.target.result; }; r.readAsDataURL(file); }
-    function quickAdd(id,e) { e.stopPropagation(); const c=comics.find(x=>x.id===id); if(c){ c.read=(parseInt(c.read)||0)+1; c.lastUpdate=Date.now(); save(); showToast("+1 Chapter"); } }
-    function applyFilter() { const s=document.getElementById('searchInput').value.toLowerCase(); const sort=document.getElementById('sortSelect').value; let res=comics.filter(c=>c.title.toLowerCase().includes(s) && (selectedGenres.size===0||c.genres.some(g=>selectedGenres.has(g))) && (currentCategory==='All'||c.category===currentCategory)); if(sort==='newest')res.sort((a,b)=>b.dateAdded-a.dateAdded); if(sort==='lastRead')res.sort((a,b)=>b.lastUpdate-a.lastUpdate); if(sort==='rating')res.sort((a,b)=>b.rating-a.rating); if(sort==='az')res.sort((a,b)=>a.title.localeCompare(b.title)); render(res); }
-    function toggleBatchMode() { if(currentUser==='guest')return; isBatchMode=!isBatchMode; selectedIds.clear(); const b=document.getElementById('batchBar'), f=document.getElementById('fabBtn'); if(isBatchMode){ b.classList.add('show'); f.classList.add('hidden'); showToast("Mode Pilih"); }else{ b.classList.remove('show'); f.classList.remove('hidden'); } applyFilter(); }
-    function toggleSelect(id) { if(selectedIds.has(id))selectedIds.delete(id); else selectedIds.add(id); applyFilter(); }
-    function batchDelete() { if(selectedIds.size===0)return showToast("Pilih!"); if(confirm("Hapus?")){ comics=comics.filter(c=>!selectedIds.has(c.id)); save(); toggleBatchMode(); showToast("Dihapus"); } }
-    function batchSetStatus(s) { if(selectedIds.size===0)return showToast("Pilih!"); comics.forEach(c=>{if(selectedIds.has(c.id))c.status=s}); save(); toggleBatchMode(); showToast("Updated"); }
-    function openModal() { document.querySelectorAll('#comicModal input,textarea').forEach(i=>i.value=''); document.getElementById('btnDelete').style.display='none'; document.getElementById('comicModal').style.display='flex'; }
-    function closeModal() { document.getElementById('comicModal').style.display='none'; }
-    function deleteComic() { if(confirm("Hapus?")){ comics=comics.filter(c=>c.id!==document.getElementById('editId').value); save(); closeModal(); showToast("Dihapus"); } }
-    function showToast(m) { const x=document.getElementById('toastBox'); x.innerText=m; x.className='show'; setTimeout(()=>x.className=x.className.replace('show',''),3000); }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display=document.getElementById('sidebar').classList.contains('active')?'block':'none'; }
-    function toggleGenreList() { const d=document.getElementById('genreContainer'); d.style.display=d.style.display==='none'?'block':'none'; }
-    function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(comics)); a.download="backup_v16.json"; a.click(); }
-    function importData(i) { const r=new FileReader(); r.onload=e=>{try{comics=JSON.parse(e.target.result);save();location.reload();}catch(x){showToast("Error");}}; r.readAsText(i.files[0]); }
-    function renderGenres() { const c=document.getElementById('genreContainer'); c.innerHTML=''; const a=new Set(); comics.forEach(x=>x.genres.forEach(g=>a.add(g))); a.forEach(g=>{ const s=document.createElement('span'); s.className=`chip ${selectedGenres.has(g)?'active':''}`; s.innerText=g; s.onclick=()=>{if(selectedGenres.has(g))selectedGenres.delete(g); else selectedGenres.add(g); renderGenres(); applyFilter();}; c.appendChild(s); }); }
-    function randomizeComic() { if(comics.length===0)return showToast("Kosong"); const r=Math.floor(Math.random()*comics.length); openDetail(comics[r].id); showToast("Acak!"); toggleSidebar(); }
+        // --- EXPOSED FUNCTIONS ---
+        window.attemptLogin = () => {
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            if(u==='admin' && p==='adminsukamommy') loginSuccess('admin');
+            else if(u==='guest' && p==='guest-guest') loginSuccess('guest');
+            else document.getElementById('loginError').innerText = "Salah!";
+        };
 
-</script>
+        window.togglePassword = (e) => {
+            if(e) { e.preventDefault(); e.stopPropagation(); }
+            const inp = document.getElementById('loginPass');
+            const icon = document.getElementById('eyeIcon');
+            icon.classList.remove('blink'); void icon.offsetWidth; icon.classList.add('blink'); 
+            if(inp.type === 'password') { inp.type = 'text'; icon.innerText = 'visibility'; }
+            else { inp.type = 'password'; icon.innerText = 'visibility_off'; }
+            inp.focus();
+        };
+
+        window.doLogout = () => location.reload();
+
+        function loginSuccess(role) {
+            currentUser = role;
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            
+            if(role === 'guest') {
+                document.getElementById('fabBtn').style.display = 'none';
+                document.getElementById('backupMenu').style.display = 'none';
+                document.getElementById('batchBtnHeader').style.display = 'none';
+                document.getElementById('btnEditDetail').style.display = 'none';
+            } else {
+                document.getElementById('fabBtn').style.display = 'flex';
+                document.getElementById('backupMenu').style.display = 'block';
+                document.getElementById('batchBtnHeader').style.display = 'flex';
+                document.getElementById('btnEditDetail').style.display = 'flex';
+            }
+
+            // LOAD DATA DARI FIREBASE
+            document.getElementById('loadingBar').style.width = '50%';
+            const comicRef = ref(db, 'comics');
+            onValue(comicRef, (snapshot) => {
+                document.getElementById('loadingBar').style.width = '100%';
+                const data = snapshot.val();
+                comics = data ? Object.values(data) : [];
+                init(); // Re-render logic
+                setTimeout(()=>document.getElementById('loadingBar').style.width = '0%', 500);
+            });
+        }
+
+        // --- RENDER & LOGIC ---
+        function init() { 
+            if(localStorage.getItem('theme')==='light') toggleTheme(false); // Restore theme
+            renderGenres(); 
+            applyFilter(); 
+        }
+
+        window.toggleTheme = (animate=true) => {
+            const icon = document.getElementById('themeIcon');
+            if(animate) { icon.classList.add('rotate-active'); setTimeout(() => icon.classList.remove('rotate-active'), 600); }
+            if(document.body.style.background.includes('rgb')) {
+                 document.body.style.background = ''; icon.innerText = 'light_mode'; localStorage.setItem('theme', 'dark');
+            } else {
+                 document.body.style.background = 'rgb(244, 244, 244)'; icon.innerText = 'dark_mode'; localStorage.setItem('theme', 'light');
+            }
+        };
+
+        window.toggleCoverMode = () => {
+            const list = document.getElementById('comicList');
+            const icon = document.getElementById('iconCover');
+            list.classList.toggle('no-cover');
+            icon.innerText = list.classList.contains('no-cover') ? 'grid_view' : 'image';
+        };
+
+        window.filterCategory = (cat, el) => {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            applyFilter();
+        };
+
+        window.applyFilter = () => {
+            const s = document.getElementById('searchInput').value.toLowerCase();
+            const sort = document.getElementById('sortSelect').value;
+            
+            let res = comics.filter(c => {
+                const titleMatch = c.title.toLowerCase().includes(s);
+                const genreMatch = selectedGenres.size === 0 || (c.genres && c.genres.some(g => selectedGenres.has(g)));
+                const catMatch = currentCategory === 'All' || c.category === currentCategory;
+                return titleMatch && genreMatch && catMatch;
+            });
+
+            if(sort === 'newest') res.sort((a,b) => b.dateAdded - a.dateAdded);
+            if(sort === 'lastRead') res.sort((a,b) => b.lastUpdate - a.lastUpdate);
+            if(sort === 'rating') res.sort((a,b) => b.rating - a.rating);
+            if(sort === 'az') res.sort((a,b) => a.title.localeCompare(b.title));
+
+            render(res);
+        };
+
+        function render(data) {
+            const list = document.getElementById('comicList');
+            if(currentUser === 'admin') document.getElementById('totalCount').innerText = data.length;
+            list.innerHTML = '';
+
+            data.forEach((c, index) => {
+                const img = c.image || 'https://via.placeholder.com/200x300/222/fff?text=No+Cover';
+                const read = parseInt(c.read)||0;
+                const total = parseInt(c.total)||0;
+                const pct = total>0?(read/total)*100:0;
+                const chInfo = total>0?`${read} / ${total}`:`Ch. ${read}`;
+                const starHtml = c.rating>0?`<span class="star-gold">★</span>${c.rating}`:'';
+                let titleClass = c.status==='Ongoing'?'text-ongoing':(c.status==='Completed'?'text-completed':'text-hiatus');
+                
+                let cardAction = `openDetail('${c.id}')`;
+                let titleAction = `openSource('${c.source}')`;
+                if(isBatchMode) { cardAction = `toggleSelect('${c.id}')`; titleAction = `toggleSelect('${c.id}')`; }
+
+                let quickAddBtn = (currentUser==='admin' && !isBatchMode) ? 
+                    `<div class="btn-quick-add" onclick="quickAdd('${c.id}', event)">+1</div>` : '';
+
+                const isSelected = selectedIds.has(c.id) ? 'selected' : '';
+                const html = `
+                    <div class="comic-card fade-in ${isSelected}" data-status="${c.status}" style="animation-delay:${index*0.05}s">
+                        <div class="card-img-wrapper">
+                            <img src="${img}" class="card-img" onclick="${isBatchMode?cardAction:''}" loading="lazy">
+                            <div class="badge-ch">${read}</div>
+                            ${quickAddBtn}
+                        </div>
+                        <div class="card-overlay" onclick="${cardAction}" style="pointer-events:auto; cursor:pointer">
+                            <div class="card-title ${titleClass}" onclick="event.stopPropagation(); ${titleAction}">${c.title}</div>
+                            <div class="card-meta"><span>${chInfo}</span><span>${starHtml}</span></div>
+                            <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += html;
+            });
+        }
+
+        // --- CLOUD CRUD ---
+        window.saveComicToCloud = () => {
+            if(currentUser !== 'admin') return;
+            const title = document.getElementById('inpTitle').value;
+            if(!title) return showToast("Judul wajib!");
+
+            const id = document.getElementById('editId').value || Date.now().toString();
+            // Cek existing untuk tanggal
+            const existing = comics.find(c => c.id === id);
+            
+            const obj = {
+                id: id,
+                title: title,
+                author: document.getElementById('inpAuthor').value,
+                synopsis: document.getElementById('inpSynopsis').value,
+                review: document.getElementById('inpReview').value,
+                category: document.getElementById('inpCategory').value,
+                status: document.getElementById('inpStatus').value,
+                rating: parseInt(document.getElementById('inpRating').value)||0,
+                read: parseInt(document.getElementById('inpRead').value)||0,
+                total: parseInt(document.getElementById('inpTotal').value)||0,
+                genres: document.getElementById('inpGenres').value.split(',').map(s=>s.trim()).filter(s=>s),
+                source: document.getElementById('inpSource').value,
+                dateAdded: existing ? existing.dateAdded : Date.now(),
+                lastUpdate: Date.now()
+            };
+
+            const file = document.getElementById('inpImgFile').files[0];
+            if(file) {
+                const r = new FileReader();
+                r.onload = e => {
+                    const i = new Image();
+                    i.onload = () => {
+                        const c = document.createElement('canvas'), s = 300/i.width;
+                        c.width = 300; c.height = i.height*s;
+                        c.getContext('2d').drawImage(i,0,0,c.width,c.height);
+                        obj.image = c.toDataURL('image/jpeg',0.8);
+                        pushToFirebase(id, obj);
+                    };
+                    i.src = e.target.result;
+                };
+                r.readAsDataURL(file);
+            } else {
+                obj.image = document.getElementById('inpImgUrl').value || (existing ? existing.image : '');
+                pushToFirebase(id, obj);
+            }
+        };
+
+        function pushToFirebase(id, obj) {
+            set(ref(db, 'comics/' + id), obj)
+                .then(() => { closeModal(); showToast("Tersimpan di Cloud!"); })
+                .catch((e) => showToast("Error: " + e.message));
+        }
+
+        window.deleteComicFromCloud = () => {
+            if(currentUser !== 'admin') return;
+            if(confirm("Hapus Permanen?")) {
+                const id = document.getElementById('editId').value;
+                remove(ref(db, 'comics/' + id));
+                closeModal();
+                showToast("Terhapus");
+            }
+        };
+
+        window.quickAdd = (id, e) => {
+            e.stopPropagation();
+            if(currentUser !== 'admin') return;
+            const c = comics.find(x => x.id === id);
+            if(c) {
+                const newRead = (parseInt(c.read) || 0) + 1;
+                set(ref(db, 'comics/' + id + '/read'), newRead);
+                set(ref(db, 'comics/' + id + '/lastUpdate'), Date.now());
+                showToast("+1 Chapter");
+            }
+        };
+
+        // --- BATCH & API ---
+        window.toggleBatchMode = () => { 
+            if(currentUser==='guest')return; 
+            isBatchMode=!isBatchMode; selectedIds.clear(); 
+            const b=document.getElementById('batchBar'), f=document.getElementById('fabBtn'); 
+            if(isBatchMode){ b.classList.add('show'); f.classList.add('hidden'); showToast("Mode Pilih"); }
+            else{ b.classList.remove('show'); f.classList.remove('hidden'); } 
+            applyFilter(); 
+        };
+        window.toggleSelect = (id) => { if(selectedIds.has(id))selectedIds.delete(id); else selectedIds.add(id); applyFilter(); };
+        window.batchDelete = () => { 
+            if(selectedIds.size===0)return showToast("Pilih dulu!"); 
+            if(confirm("Hapus "+selectedIds.size+" item?")){ 
+                selectedIds.forEach(id => remove(ref(db, 'comics/' + id)));
+                window.toggleBatchMode();
+                showToast("Batch Hapus Berhasil");
+            } 
+        };
+        window.batchSetStatus = (st) => {
+            if(selectedIds.size===0)return showToast("Pilih dulu!");
+            selectedIds.forEach(id => set(ref(db, 'comics/' + id + '/status'), st));
+            window.toggleBatchMode();
+            showToast("Batch Status Update");
+        };
+
+        window.fetchFromAPI = async () => {
+            const title = document.getElementById('inpTitle').value;
+            if(!title) return showToast("Isi judul dulu!");
+            showToast("Searching Jikan...");
+            try {
+                const res = await fetch(`https://api.jikan.moe/v4/manga?q=${title}&limit=1`);
+                const data = await res.json();
+                if(data.data && data.data.length > 0) {
+                    const m = data.data[0];
+                    document.getElementById('inpTitle').value = m.title;
+                    document.getElementById('inpAuthor').value = m.authors[0] ? m.authors[0].name : '';
+                    document.getElementById('inpStatus').value = m.status === 'Publishing' ? 'Ongoing' : 'Completed';
+                    document.getElementById('inpTotal').value = m.chapters || 0;
+                    document.getElementById('inpGenres').value = m.genres.map(g=>g.name).join(', ');
+                    document.getElementById('inpSynopsis').value = m.synopsis || '';
+                    document.getElementById('inpImgUrl').value = m.images.jpg.image_url;
+                    
+                    if(m.type === 'Manhwa') document.getElementById('inpCategory').value = 'Manhwa';
+                    else if(m.type === 'Manhua') document.getElementById('inpCategory').value = 'Manhua';
+                    else document.getElementById('inpCategory').value = 'Manga';
+                    showToast("Ketemu!");
+                } else { showToast("404 Not Found"); }
+            } catch(e) { showToast("API Error"); }
+        };
+
+        // --- HELPERS (MODALS, ETC) ---
+        window.openModal = () => { document.querySelectorAll('#comicModal input,textarea').forEach(i=>i.value=''); document.getElementById('editId').value=''; document.getElementById('btnDelete').style.display='none'; document.getElementById('comicModal').style.display='flex'; };
+        window.closeModal = () => document.getElementById('comicModal').style.display='none';
+        
+        window.openDetail = (id) => {
+            currentDetailId = id;
+            const c = comics.find(x => x.id === id);
+            document.getElementById('detBg').src = c.image; document.getElementById('detFg').src = c.image;
+            document.getElementById('detTitle').innerText = c.title; document.getElementById('detAuthor').innerText = c.author || '-';
+            document.getElementById('detStatus').innerText = c.status; document.getElementById('detRating').innerText = c.rating || '-';
+            document.getElementById('detTotal').innerText = c.total || '?'; document.getElementById('detRead').innerText = c.read || '0';
+            document.getElementById('detSynopsis').innerText = c.synopsis || '-'; document.getElementById('detReview').innerText = c.review || '-';
+            
+            const st = document.getElementById('detStatus');
+            if(c.status==='Ongoing') st.style.color='var(--color-ongoing)';
+            else if(c.status==='Completed') st.style.color='var(--color-completed)';
+            else st.style.color='var(--color-hiatus)';
+
+            document.getElementById('detailModal').style.display = 'block';
+        };
+        window.closeDetail = () => document.getElementById('detailModal').style.display='none';
+        window.openSourceFromDetail = () => { const c=comics.find(x=>x.id===currentDetailId); window.open(c.source || '#', '_blank'); };
+        window.editFromDetail = () => {
+            closeDetail();
+            const c = comics.find(x => x.id === currentDetailId);
+            document.getElementById('editId').value = c.id;
+            document.getElementById('inpTitle').value = c.title;
+            document.getElementById('inpAuthor').value = c.author;
+            document.getElementById('inpStatus').value = c.status;
+            document.getElementById('inpRating').value = c.rating;
+            document.getElementById('inpRead').value = c.read;
+            document.getElementById('inpTotal').value = c.total;
+            document.getElementById('inpGenres').value = (c.genres || []).join(', ');
+            document.getElementById('inpSynopsis').value = c.synopsis;
+            document.getElementById('inpReview').value = c.review;
+            document.getElementById('inpSource').value = c.source;
+            document.getElementById('inpImgUrl').value = c.image;
+            document.getElementById('inpCategory').value = c.category;
+            document.getElementById('btnDelete').style.display = 'block';
+            document.getElementById('comicModal').style.display = 'flex';
+        };
+
+        window.renderGenres = () => {
+            const c = document.getElementById('genreContainer'); c.innerHTML='';
+            const a = new Set(); comics.forEach(x => { if(x.genres) x.genres.forEach(g => a.add(g)); });
+            a.forEach(g => {
+                const s = document.createElement('span'); s.className = `chip ${selectedGenres.has(g)?'active':''}`; s.innerText = g;
+                s.onclick = () => { if(selectedGenres.has(g))selectedGenres.delete(g); else selectedGenres.add(g); window.applyFilter(); window.renderGenres(); };
+                c.appendChild(s);
+            });
+        };
+
+        window.toggleGenreList = () => { const d=document.getElementById('genreContainer'); d.style.display=d.style.display==='none'?'block':'none'; };
+        window.randomizeComic = () => { if(comics.length===0)return showToast("Kosong"); const r=Math.floor(Math.random()*comics.length); openDetail(comics[r].id); showToast("Acak!"); document.getElementById('sidebar').classList.remove('active'); };
+        window.exportData = () => { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(comics)); a.download="backup_cloud.json"; a.click(); };
+        window.showToast = (m) => { const x=document.getElementById('toastBox'); x.innerText=m; x.className='show'; setTimeout(()=>x.className='',3000); };
+        window.openSource = (url) => { if(!url||url==='undefined')showToast("Link Kosong"); else window.open(url.startsWith('http')?url:'https://'+url, '_blank'); };
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display=document.getElementById('sidebar').classList.contains('active')?'block':'none'; };
+
+    </script>
 </body>
 </html>
