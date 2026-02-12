@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V21 (Auto Login)</title>
+    <title>Komik Library V21.1 (Fix Genre)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -130,7 +130,10 @@
         
         .detail-body { padding: 25px 20px; }
         .detail-title { font-size: 1.4rem; font-weight: 800; color: white; margin-bottom: 5px; line-height: 1.2; text-align:center; }
-        .detail-author { font-size: 0.9rem; color: var(--accent); margin-bottom: 20px; font-weight: 500; text-align:center; }
+        .detail-author { font-size: 0.9rem; color: var(--accent); margin-bottom: 10px; font-weight: 500; text-align:center; }
+        /* NEW: Genre Container di Detail */
+        .detail-genres { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 20px; }
+
         .detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .stat-box small { display: block; color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
         .stat-box strong { color: white; font-size: 1rem; }
@@ -235,6 +238,8 @@
             <div class="detail-body">
                 <div id="detTitle" class="detail-title">Judul</div>
                 <div id="detAuthor" class="detail-author">Author</div>
+                <div id="detGenres" class="detail-genres"></div>
+
                 <div class="detail-stats">
                     <div class="stat-box"><small>Status</small><strong id="detStatus">-</strong></div>
                     <div class="stat-box"><small>Rating</small><strong id="detRating">-</strong></div>
@@ -596,6 +601,16 @@
             document.getElementById('detTotal').innerText = c.total || '?'; document.getElementById('detRead').innerText = c.read || '0';
             document.getElementById('detSynopsis').innerText = c.synopsis || '-'; document.getElementById('detReview').innerText = c.review || '-';
             
+            // --- NEW: RENDER GENRES DI DETAIL ---
+            const genreCt = document.getElementById('detGenres'); genreCt.innerHTML = '';
+            if (c.genres && c.genres.length > 0) {
+                c.genres.forEach(g => {
+                    const s = document.createElement('span'); s.className = 'chip'; s.innerText = g;
+                    genreCt.appendChild(s);
+                });
+            }
+            // ------------------------------------
+
             const st = document.getElementById('detStatus');
             if(c.status==='Ongoing') st.style.color='var(--color-ongoing)';
             else if(c.status==='Completed') st.style.color='var(--color-completed)';
