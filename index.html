@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Komik Library V17.1 (No Crop)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-ongoing: #4facfe; --color-completed: #ffa726; --color-hiatus: #ff5252;
+            --glass-bg: rgba(30, 30, 30, 0.85);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            --text-main: #ffffff; --text-sub: #dddddd; --accent: #00f2fe; --danger: #ff4d4d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; color: var(--text-main); min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2670&auto=format&fit=crop') no-repeat center center fixed; 
+            background-size: cover; padding-bottom: 80px; transition: background 0.5s;
+        }
+
+        /* --- LOGIN & COMMON --- */
+        #loginSection { position: fixed; inset: 0; z-index: 9999; background: inherit; background-size: cover; display: flex; align-items: center; justify-content: center; }
+        #loginSection::before { content:''; position: absolute; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); }
+        .login-box { position: relative; background: var(--glass-bg); border: var(--glass-border); padding: 40px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .login-title { font-size: 1.5rem; margin-bottom: 20px; color: var(--accent); font-weight: bold; letter-spacing: 1px; }
+        .input-group { position: relative; margin-bottom: 15px; }
+        .login-input { width: 100%; padding: 12px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 1rem; transition: 0.3s; }
+        .login-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.15); }
+        
+        .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #aaa; cursor: pointer; padding: 5px; z-index: 10; transition: 0.2s; }
+        .eye-btn:hover { color: var(--accent); }
+        .eye-btn:active { transform: translateY(-50%) scale(0.8); }
+
+        .login-btn { width: 100%; padding: 12px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-bottom: 20px; transition: 0.2s; }
+        .login-btn:active { transform: scale(0.95); }
+        .guest-card { background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; font-size: 0.8rem; color: #ccc; }
+        .error-msg { color: #ff4d4d; font-size: 0.8rem; margin-bottom: 10px; }
+
+        /* --- HEADER & NAV --- */
+        #mainApp { display: none; }
+        header { position: sticky; top: 0; z-index: 100; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(12px); border-bottom: var(--glass-border); padding: 10px 15px; display: flex; align-items: center; gap: 10px; transition: 0.3s; }
+        .search-wrapper { flex-grow: 1; position: relative; }
+        .search-wrapper input { width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 35px 8px 15px; border-radius: 20px; font-size: 0.9rem; }
+        .search-wrapper .material-icons { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.5); pointer-events: none; }
+        
+        .btn-icon { background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; padding: 8px; border-radius: 50%; transition: 0.3s; }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); }
+        .btn-icon:active { transform: scale(0.9); }
+
+        @keyframes spinIcon { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(0.8); } 100% { transform: rotate(360deg) scale(1); } }
+        .rotate-active { animation: spinIcon 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .category-bar { position: sticky; top: 60px; z-index: 95; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 10px 15px; display: flex; gap: 8px; overflow-x: auto; border-bottom: var(--glass-border); scrollbar-width: none; }
+        .category-bar::-webkit-scrollbar { display: none; }
+        .cat-btn { white-space: nowrap; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.3s; }
+        .cat-btn.active { background: var(--accent); color: #000; font-weight: bold; border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); }
+
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 150; display: none; backdrop-filter: blur(3px); }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #111; z-index: 160; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; overflow-y: auto; border-right: 1px solid #333; }
+        .sidebar.active { left: 0; box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
+        .sidebar-header { font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; cursor: pointer; display: flex; justify-content: space-between; }
+        .chip { display: inline-block; font-size: 0.7rem; padding: 4px 10px; margin: 2px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ddd; cursor: pointer; border: 1px solid #333; transition: 0.2s; }
+        .chip.active { background: var(--accent); color: black; font-weight: bold; }
+
+        .main-content { padding: 15px; }
+        .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        @media (min-width: 600px) { .comic-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+
+        /* CARD STYLE & ANIMATIONS */
+        .comic-card { position: relative; border-radius: 8px; overflow: hidden; background: var(--glass-bg); border: var(--glass-border); box-shadow: var(--glass-shadow); display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s; }
+        .comic-card:active { transform: scale(0.96); }
+
+        .card-img-wrapper { width: 100%; aspect-ratio: 2/3; overflow: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        
+        .comic-grid.no-cover .card-img-wrapper { aspect-ratio: 0; height: 0; opacity: 0; margin-bottom: 0; }
+        .comic-grid.no-cover .comic-card { min-height: 100px; justify-content: center; }
+        
+        .card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 10%, rgba(0,0,0,0.5) 80%, transparent 100%); padding: 30px 5px 6px 5px; transition: all 0.3s; }
+        .comic-grid.no-cover .card-overlay { position: relative; background: none; padding: 10px; height: 100%; justify-content: center; display: flex; flex-direction: column; }
+
+        .card-title { font-size: 0.7rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; text-decoration: underline; text-shadow: 0 1px 2px black; }
+        .comic-grid.no-cover .card-title { white-space: normal; line-height: 1.3; font-size: 0.85rem; }
+
+        .text-ongoing { color: var(--color-ongoing); } .text-completed { color: var(--color-completed); } .text-hiatus { color: var(--color-hiatus); }
+        .card-meta { display: flex; justify-content: space-between; font-size: 0.65rem; color: #eee; }
+        .badge-ch { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.7); font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; color: white; backdrop-filter: blur(4px); transition: 0.3s; }
+        .comic-grid.no-cover .badge-ch { opacity: 0; }
+
+        .btn-quick-add { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; font-weight: bold; color:white; z-index: 10; transition: 0.2s; backdrop-filter: blur(4px); }
+        .btn-quick-add:active { background: var(--accent); color: black; transform: scale(0.9); }
+        .comic-grid.no-cover .btn-quick-add { top: 50%; transform: translateY(-50%); right: 10px; }
+
+        .comic-card[data-status="Ongoing"] { border-bottom: 3px solid var(--color-ongoing); }
+        .comic-card[data-status="Completed"] { border-bottom: 3px solid var(--color-completed); }
+        .comic-card[data-status="Hiatus"] { border-bottom: 3px solid var(--color-hiatus); }
+
+        .progress-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.2); }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s; }
+
+        .comic-card.selecting { cursor: pointer; }
+        .comic-card.selected { border: 2px solid var(--accent); transform: scale(0.95); opacity: 0.8; }
+        .comic-card.selected::after { content: '✔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: var(--accent); text-shadow: 0 0 10px black; z-index: 20; }
+        
+        #batchBar { position: fixed; bottom: -100px; left: 0; width: 100%; background: #111; border-top: 1px solid var(--accent); padding: 15px; display: flex; justify-content: space-around; z-index: 95; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #batchBar.show { bottom: 0; }
+        .batch-btn { background: none; border: 1px solid #555; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+        #toastBox { visibility: hidden; min-width: 250px; background-color: #222; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); border: 1px solid var(--accent); opacity: 0; transition: 0.3s; }
+        #toastBox.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        /* DETAIL MODAL (FIXED NO CROP) */
+        .detail-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; overflow-y: auto; display: none; padding: 20px 0; animation: fadeIn 0.3s; }
+        .detail-content { background: #1a1a1a; width: 90%; max-width: 500px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; box-shadow: 0 10px 40px black; }
+        
+        /* HEADER BARU: Menampilkan gambar utuh */
+        .detail-header { 
+            position: relative; 
+            height: 380px; /* Cukup tinggi untuk cover vertikal */
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            background: #000;
+        }
+        .detail-cover-bg { 
+            position: absolute; inset: 0; width: 100%; height: 100%; 
+            object-fit: cover; opacity: 0.4; filter: blur(15px); /* Background Blur */
+        }
+        .detail-cover-fg { 
+            position: relative; 
+            height: 90%; /* Fit Height */
+            width: auto; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.8); 
+            border: 2px solid var(--accent); 
+            border-radius: 8px;
+            z-index: 2; 
+        }
+        
+        .detail-close { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 210; backdrop-filter: blur(4px); transition: 0.2s; }
+        .detail-close:active { transform: scale(0.9); }
+        
+        .detail-body { padding: 25px 20px; }
+        .detail-title { font-size: 1.4rem; font-weight: 800; color: white; margin-bottom: 5px; line-height: 1.2; text-align:center; }
+        .detail-author { font-size: 0.9rem; color: var(--accent); margin-bottom: 20px; font-weight: 500; text-align:center; }
+        .detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-box small { display: block; color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-box strong { color: white; font-size: 1rem; }
+        .detail-section { margin-top: 25px; }
+        .detail-label { font-size: 0.75rem; font-weight: bold; color: #888; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px; display: block; letter-spacing: 1px; }
+        .detail-text { font-size: 0.95rem; color: #ddd; line-height: 1.6; white-space: pre-wrap; font-weight: 300; }
+        .detail-actions { margin-top: 30px; display: flex; gap: 10px; }
+        .act-btn { flex: 1; padding: 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 1rem; }
+        .act-btn:active { transform: scale(0.97); }
+        .btn-read { background: var(--accent); color: #000; box-shadow: 0 5px 20px rgba(0, 242, 254, 0.2); }
+        .btn-edit { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 210; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.2s; }
+        .modal-content { background: #222; width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; border: 1px solid #444; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        input, select, textarea { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 12px; border-radius: 10px; margin-bottom: 12px; font-family: inherit; transition: 0.2s; }
+        input:focus, textarea:focus { border-color: var(--accent); background: #3a3a3a; }
+        .api-btn { width: 100%; padding: 12px; background: #6200ea; color: white; border: none; border-radius: 10px; margin-bottom: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .api-btn:active { transform: scale(0.97); }
+        
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-size: 30px; border: none; z-index: 90; box-shadow: 0 10px 30px rgba(0, 242, 254, 0.3); transition: 0.3s; cursor: pointer; }
+        .fab:active { transform: scale(0.9) rotate(90deg); }
+        .fab.hidden { transform: scale(0); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    </style>
+</head>
+<body>
+
+    <div id="loginSection">
+        <div class="login-box">
+            <div class="login-title">🔐 MY KOMIK</div>
+            <div id="loginError" class="error-msg"></div>
+            <input type="text" id="loginUser" class="login-input" placeholder="Username" autocomplete="off">
+            <div class="input-group">
+                <input type="password" id="loginPass" class="login-input" placeholder="Password">
+                <span class="material-icons eye-btn" id="eyeIcon" onmousedown="togglePassword(event)" ontouchstart="togglePassword(event)">visibility_off</span>
+            </div>
+            <button onclick="attemptLogin()" class="login-btn">MASUK</button>
+            <div class="guest-card">
+                <div>Untuk Tamu / Pengunjung:</div>User: <strong>guest</strong> | Pass: <strong>guest-guest</strong>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainApp">
+        <header>
+            <button class="btn-icon" onclick="toggleSidebar()"><span class="material-icons">menu</span></button>
+            <div class="search-wrapper"><input type="text" id="searchInput" placeholder="Cari..." onkeyup="applyFilter()"></div>
+            <button class="btn-icon" id="batchBtnHeader" onclick="toggleBatchMode()"><span class="material-icons" id="batchIcon">checklist</span></button>
+            <button class="btn-icon" onclick="toggleCoverMode()"><span class="material-icons" id="iconCover">image</span></button>
+            <button class="btn-icon" onclick="toggleTheme()"><span class="material-icons" id="themeIcon">light_mode</span></button>
+            <button class="btn-icon logout" onclick="doLogout()"><span class="material-icons">logout</span></button>
+        </header>
+
+        <div class="category-bar">
+            <div class="cat-btn active" onclick="filterCategory('All', this)">All</div>
+            <div class="cat-btn" onclick="filterCategory('Manhwa', this)">Manhwa</div>
+            <div class="cat-btn" onclick="filterCategory('Manhua', this)">Manhua</div>
+            <div class="cat-btn" onclick="filterCategory('Manga', this)">Manga</div>
+            <div class="cat-btn" onclick="filterCategory('Doujin', this)">Doujin</div>
+            <div class="cat-btn" onclick="filterCategory('Manhwa18', this)">Manhwa18</div>
+            <div class="cat-btn" onclick="filterCategory('Manga18', this)">Manga18</div>
+        </div>
+
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header" onclick="randomizeComic()"><span>ACAK KOMIK</span><span class="material-icons">casino</span></div>
+            <div class="sidebar-header" onclick="toggleGenreList()"><span>GENRE</span><span class="material-icons" id="genreToggleIcon">expand_more</span></div>
+            <div id="genreContainer" style="margin-bottom:20px; display:block"></div>
+            <div class="sidebar-header">URUTKAN</div>
+            <select id="sortSelect" onchange="applyFilter()" style="margin-bottom:20px">
+                <option value="lastRead">Terakhir Update</option>
+                <option value="newest">Baru Ditambahkan</option>
+                <option value="rating">Rating Tertinggi</option>
+                <option value="az">Judul (A-Z)</option>
+            </select>
+            <div id="backupMenu">
+                <div class="sidebar-header">DATA</div>
+                <button onclick="exportData()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:6px; margin-bottom:5px; text-align:left;">📥 Backup Data</button>
+                <input type="file" id="importFile" hidden onchange="importData(this)">
+                <button onclick="document.getElementById('importFile').click()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:6px; text-align:left;">📤 Restore Data</button>
+                <div style="margin-top:20px; font-size:0.7rem; color:#aaa; text-align:center">Total: <span id="totalCount">0</span> Komik</div>
+            </div>
+        </aside>
+
+        <div class="main-content"><div class="comic-grid" id="comicList"></div></div>
+        <div id="batchBar"><button class="batch-btn" onclick="batchSetStatus('Completed')">Set Tamat</button><button class="batch-btn" onclick="batchSetStatus('Ongoing')">Set Ongoing</button><button class="batch-btn danger" onclick="batchDelete()">Hapus</button></div>
+        <div id="toastBox">Notifikasi</div>
+        <button class="fab" id="fabBtn" onclick="openModal()">+</button>
+    </div>
+
+    <div class="detail-modal" id="detailModal">
+        <div class="detail-content">
+            <button class="detail-close" onclick="closeDetail()">×</button>
+            <div class="detail-header">
+                <img id="detBg" class="detail-cover-bg" src="">
+                <img id="detFg" class="detail-cover-fg" src="">
+            </div>
+            <div class="detail-body">
+                <div id="detTitle" class="detail-title">Judul</div>
+                <div id="detAuthor" class="detail-author">Author</div>
+                <div class="detail-stats">
+                    <div class="stat-box"><small>Status</small><strong id="detStatus">-</strong></div>
+                    <div class="stat-box"><small>Rating</small><strong id="detRating">-</strong></div>
+                    <div class="stat-box"><small>Total</small><strong id="detTotal">-</strong></div>
+                    <div class="stat-box"><small>Dibaca</small><strong id="detRead" style="color:var(--accent)">-</strong></div>
+                </div>
+                <div class="detail-section"><span class="detail-label">Sinopsis</span><div id="detSynopsis" class="detail-text"></div></div>
+                <div class="detail-section"><span class="detail-label">Review Admin</span><div id="detReview" class="detail-text" style="color:#ffa726; font-style:italic"></div></div>
+                <div class="detail-actions">
+                    <button class="act-btn btn-read" onclick="openSourceFromDetail()"><span class="material-icons">menu_book</span> Baca</button>
+                    <button id="btnEditDetail" class="act-btn btn-edit" onclick="editFromDetail()"><span class="material-icons">edit</span> Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="comicModal">
+        <div class="modal-content">
+            <h3>Editor Komik</h3>
+            <input type="hidden" id="editId">
+            <button class="api-btn" onclick="fetchFromAPI()"><span class="material-icons">search</span> Cari Otomatis (Jikan)</button>
+            <label>Judul</label><input type="text" id="inpTitle">
+            <label>Author</label><input type="text" id="inpAuthor" placeholder="Nama Author">
+            <label>Kategori</label>
+            <select id="inpCategory">
+                <option value="Manhwa">Manhwa</option><option value="Manhua">Manhua</option><option value="Manga">Manga</option>
+                <option value="Doujin">Doujin</option><option value="Manhwa18">Manhwa18</option><option value="Manga18">Manga18</option>
+            </select>
+            <div style="display:flex; gap:10px">
+                <div style="flex:1"><label>Status</label><select id="inpStatus"><option value="Ongoing">Ongoing 🔵</option><option value="Completed">Completed 🟠</option><option value="Hiatus">Hiatus 🔴</option></select></div>
+                <div style="flex:1"><label>Rating</label><input type="number" id="inpRating" placeholder="1-10"></div>
+            </div>
+            <div style="display:flex; gap:10px">
+                <div style="flex:1"><label>Dibaca</label><input type="number" id="inpRead"></div>
+                <div style="flex:1"><label>Total</label><input type="number" id="inpTotal"></div>
+            </div>
+            <label>Genre</label><input type="text" id="inpGenres">
+            <label>Sinopsis</label><textarea id="inpSynopsis" rows="3"></textarea>
+            <label>Review</label><textarea id="inpReview" rows="2"></textarea>
+            <label>Link Baca</label><input type="text" id="inpSource" placeholder="https://...">
+            <label>Cover</label><div style="display:flex; gap:5px"><input type="file" id="inpImgFile" style="font-size:0.7rem"><input type="text" id="inpImgUrl" placeholder="URL"></div>
+            <button onclick="saveComic()" style="width:100%; padding:12px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:10px; margin-top:10px">SIMPAN</button>
+            <button onclick="closeModal()" style="width:100%; padding:10px; background:transparent; border:1px solid #555; color:#aaa; border-radius:10px; margin-top:5px">BATAL</button>
+            <button onclick="deleteComic()" id="btnDelete" style="width:100%; padding:10px; background:transparent; color:#ff4d4d; border:none; margin-top:5px; display:none">Hapus</button>
+        </div>
+    </div>
+
+<script>
+    let comics = []; try { comics = JSON.parse(localStorage.getItem('myComicsV16')) || []; } catch(e) { comics=[]; }
+    let selectedGenres = new Set();
+    let isBatchMode = false;
+    let selectedIds = new Set();
+    let currentUser = null; 
+    let currentCategory = 'All';
+    let currentDetailId = null;
+
+    // LOGIN & EYE
+    function togglePassword(e) {
+        if(e) { e.preventDefault(); e.stopPropagation(); }
+        const inp = document.getElementById('loginPass');
+        const icon = document.getElementById('eyeIcon');
+        icon.classList.remove('blink'); void icon.offsetWidth; icon.classList.add('blink'); 
+        if(inp.type === 'password') { inp.type = 'text'; icon.innerText = 'visibility'; }
+        else { inp.type = 'password'; icon.innerText = 'visibility_off'; }
+        inp.focus();
+    }
+
+    function attemptLogin() {
+        const u = document.getElementById('loginUser').value;
+        const p = document.getElementById('loginPass').value;
+        if(u==='admin' && p==='adminsukamommy') loginSuccess('admin');
+        else if(u==='guest' && p==='guest-guest') loginSuccess('guest');
+        else document.getElementById('loginError').innerText = "Salah!";
+    }
+
+    function loginSuccess(role) {
+        currentUser = role;
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        if(role === 'guest') {
+            document.getElementById('fabBtn').style.display = 'none';
+            document.getElementById('backupMenu').style.display = 'none';
+            document.getElementById('batchBtnHeader').style.display = 'none';
+            document.getElementById('btnEditDetail').style.display = 'none';
+        } else {
+            document.getElementById('fabBtn').style.display = 'flex';
+            document.getElementById('backupMenu').style.display = 'block';
+            document.getElementById('batchBtnHeader').style.display = 'flex';
+            document.getElementById('btnEditDetail').style.display = 'flex';
+        }
+        init();
+    }
+
+    function doLogout() {
+        currentUser = null;
+        document.getElementById('loginSection').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginUser').value=''; document.getElementById('loginPass').value='';
+    }
+
+    // ANIMATIONS
+    function toggleTheme() {
+        const icon = document.getElementById('themeIcon');
+        icon.classList.add('rotate-active'); 
+        setTimeout(() => icon.classList.remove('rotate-active'), 600);
+        
+        if(document.body.style.background.includes('rgb')) {
+             document.body.style.background = ''; // Image
+             icon.innerText = 'light_mode';
+             localStorage.setItem('theme', 'dark');
+        } else {
+             document.body.style.background = 'rgb(244, 244, 244)';
+             icon.innerText = 'dark_mode';
+             localStorage.setItem('theme', 'light');
+        }
+    }
+
+    function toggleCoverMode() {
+        const list = document.getElementById('comicList');
+        const icon = document.getElementById('iconCover');
+        list.classList.toggle('no-cover');
+        icon.innerText = list.classList.contains('no-cover') ? 'grid_view' : 'image';
+    }
+
+    // API & DATA
+    async function fetchFromAPI() {
+        const title = document.getElementById('inpTitle').value;
+        if(!title) return showToast("Isi judul dulu!");
+        showToast("Mencari...");
+        try {
+            const res = await fetch(`https://api.jikan.moe/v4/manga?q=${title}&limit=1`);
+            const data = await res.json();
+            if(data.data && data.data.length > 0) {
+                const manga = data.data[0];
+                document.getElementById('inpTitle').value = manga.title;
+                document.getElementById('inpAuthor').value = manga.authors[0] ? manga.authors[0].name : 'Unknown';
+                document.getElementById('inpStatus').value = manga.status === 'Publishing' ? 'Ongoing' : 'Completed';
+                document.getElementById('inpTotal').value = manga.chapters || 0;
+                document.getElementById('inpGenres').value = manga.genres.map(g=>g.name).join(', ');
+                document.getElementById('inpSynopsis').value = manga.synopsis || '';
+                document.getElementById('inpImgUrl').value = manga.images.jpg.image_url;
+                
+                if(manga.type === 'Manhwa') document.getElementById('inpCategory').value = 'Manhwa';
+                else if(manga.type === 'Manhua') document.getElementById('inpCategory').value = 'Manhua';
+                else document.getElementById('inpCategory').value = 'Manga';
+                showToast("Ditemukan!");
+            } else { showToast("Tidak ditemukan"); }
+        } catch(e) { showToast("Error API"); }
+    }
+
+    // DETAIL
+    function openDetail(id) {
+        const c = comics.find(x => x.id === id);
+        currentDetailId = id;
+        document.getElementById('detBg').src = c.image;
+        document.getElementById('detFg').src = c.image;
+        document.getElementById('detTitle').innerText = c.title;
+        document.getElementById('detAuthor').innerText = c.author || 'Unknown';
+        document.getElementById('detStatus').innerText = c.status;
+        document.getElementById('detRating').innerText = c.rating || '-';
+        document.getElementById('detTotal').innerText = c.total || '?';
+        document.getElementById('detRead').innerText = c.read || '0';
+        document.getElementById('detSynopsis').innerText = c.synopsis || '-';
+        document.getElementById('detReview').innerText = c.review || '-';
+        
+        const st = document.getElementById('detStatus');
+        if(c.status==='Ongoing') st.style.color='var(--color-ongoing)';
+        else if(c.status==='Completed') st.style.color='var(--color-completed)';
+        else st.style.color='var(--color-hiatus)';
+
+        document.getElementById('detailModal').style.display = 'block';
+    }
+    function closeDetail() { document.getElementById('detailModal').style.display='none'; }
+    function openSourceFromDetail() { const c=comics.find(x=>x.id===currentDetailId); openSource(c.source); }
+    function editFromDetail() { closeDetail(); edit(currentDetailId); }
+
+    // RENDER
+    function init() { if(localStorage.getItem('theme')==='light') toggleTheme(); renderGenres(); applyFilter(); }
+    function filterCategory(cat, el) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        applyFilter();
+    }
+
+    function render(data) {
+        const list = document.getElementById('comicList');
+        if(currentUser === 'admin') document.getElementById('totalCount').innerText = data.length;
+        list.innerHTML = '';
+
+        data.forEach((c, index) => {
+            const img = c.image || 'https://via.placeholder.com/200x300/222/fff?text=No+Cover';
+            const read = parseInt(c.read)||0;
+            const total = parseInt(c.total)||0;
+            const pct = total>0?(read/total)*100:0;
+            const chInfo = total>0?`${read} / ${total}`:`Ch. ${read}`;
+            const starHtml = c.rating>0?`<span class="star-gold">★</span>${c.rating}`:'';
+            
+            let titleClass = c.status==='Ongoing'?'text-ongoing':(c.status==='Completed'?'text-completed':'text-hiatus');
+            
+            let cardAction = `openDetail('${c.id}')`;
+            let titleAction = `openSource('${c.source}')`;
+            if(isBatchMode) { cardAction = `toggleSelect('${c.id}')`; titleAction = `toggleSelect('${c.id}')`; }
+
+            let quickAddBtn = (currentUser==='admin' && !isBatchMode) ? 
+                `<div class="btn-quick-add" onclick="quickAdd('${c.id}', event)">+1</div>` : '';
+
+            const isSelected = selectedIds.has(c.id) ? 'selected' : '';
+            const html = `
+                <div class="comic-card fade-in ${isSelected}" data-status="${c.status}" style="animation-delay:${index*0.05}s">
+                    <div class="card-img-wrapper">
+                        <img src="${img}" class="card-img" onclick="${isBatchMode?cardAction:''}" loading="lazy">
+                        <div class="badge-ch">${read}</div>
+                        ${quickAddBtn}
+                    </div>
+                    <div class="card-overlay" onclick="${cardAction}" style="pointer-events:auto; cursor:pointer">
+                        <div class="card-title ${titleClass}" onclick="event.stopPropagation(); ${titleAction}">${c.title}</div>
+                        <div class="card-meta"><span>${chInfo}</span><span>${starHtml}</span></div>
+                        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
+                    </div>
+                </div>
+            `;
+            list.innerHTML += html;
+        });
+    }
+
+    function openSource(url) { if(!url||url==='undefined')showToast("Link Kosong"); else window.open(url.startsWith('http')?url:'https://'+url, '_blank'); }
+    
+    function saveComic() {
+        const title = document.getElementById('inpTitle').value;
+        if(!title) return showToast("Judul wajib!");
+        const id = document.getElementById('editId').value || Date.now().toString();
+        const existing = comics.find(c => c.id === id);
+        const obj = {
+            id, title,
+            author: document.getElementById('inpAuthor').value,
+            synopsis: document.getElementById('inpSynopsis').value,
+            review: document.getElementById('inpReview').value,
+            category: document.getElementById('inpCategory').value,
+            status: document.getElementById('inpStatus').value,
+            rating: parseInt(document.getElementById('inpRating').value)||0,
+            read: parseInt(document.getElementById('inpRead').value)||0,
+            total: parseInt(document.getElementById('inpTotal').value)||0,
+            genres: document.getElementById('inpGenres').value.split(',').map(s=>s.trim()).filter(s=>s),
+            source: document.getElementById('inpSource').value,
+            dateAdded: existing?existing.dateAdded:Date.now(), lastUpdate: Date.now()
+        };
+        const file = document.getElementById('inpImgFile').files[0];
+        if(file) compressImage(file, res => { obj.image=res; finalize(obj); });
+        else { obj.image = document.getElementById('inpImgUrl').value || (existing?existing.image:''); finalize(obj); }
+    }
+
+    function finalize(obj) {
+        const idx = comics.findIndex(c => c.id === obj.id);
+        if(idx > -1) comics[idx] = obj; else comics.push(obj);
+        save(); closeModal(); showToast("Disimpan!");
+    }
+
+    function edit(id) {
+        const c = comics.find(x => x.id === id);
+        document.getElementById('editId').value = c.id;
+        document.getElementById('inpTitle').value = c.title;
+        document.getElementById('inpAuthor').value = c.author || '';
+        document.getElementById('inpSynopsis').value = c.synopsis || '';
+        document.getElementById('inpReview').value = c.review || '';
+        document.getElementById('inpStatus').value = c.status;
+        document.getElementById('inpRating').value = c.rating;
+        document.getElementById('inpRead').value = c.read;
+        document.getElementById('inpTotal').value = c.total;
+        document.getElementById('inpGenres').value = c.genres.join(', ');
+        document.getElementById('inpSource').value = c.source || '';
+        document.getElementById('inpImgUrl').value = c.image || ''; 
+        document.getElementById('inpCategory').value = c.category || 'Manhwa';
+        document.getElementById('btnDelete').style.display = 'block';
+        document.getElementById('comicModal').style.display = 'flex';
+    }
+
+    // UTILS
+    function save() { localStorage.setItem('myComicsV16', JSON.stringify(comics)); renderGenres(); applyFilter(); }
+    function compressImage(file, cb) { const r=new FileReader(); r.onload=e=>{ const i=new Image(); i.onload=()=>{ const c=document.createElement('canvas'),s=300/i.width; c.width=300; c.height=i.height*s; c.getContext('2d').drawImage(i,0,0,c.width,c.height); cb(c.toDataURL('image/jpeg',0.8)); }; i.src=e.target.result; }; r.readAsDataURL(file); }
+    function quickAdd(id,e) { e.stopPropagation(); const c=comics.find(x=>x.id===id); if(c){ c.read=(parseInt(c.read)||0)+1; c.lastUpdate=Date.now(); save(); showToast("+1 Chapter"); } }
+    function applyFilter() { const s=document.getElementById('searchInput').value.toLowerCase(); const sort=document.getElementById('sortSelect').value; let res=comics.filter(c=>c.title.toLowerCase().includes(s) && (selectedGenres.size===0||c.genres.some(g=>selectedGenres.has(g))) && (currentCategory==='All'||c.category===currentCategory)); if(sort==='newest')res.sort((a,b)=>b.dateAdded-a.dateAdded); if(sort==='lastRead')res.sort((a,b)=>b.lastUpdate-a.lastUpdate); if(sort==='rating')res.sort((a,b)=>b.rating-a.rating); if(sort==='az')res.sort((a,b)=>a.title.localeCompare(b.title)); render(res); }
+    function toggleBatchMode() { if(currentUser==='guest')return; isBatchMode=!isBatchMode; selectedIds.clear(); const b=document.getElementById('batchBar'), f=document.getElementById('fabBtn'); if(isBatchMode){ b.classList.add('show'); f.classList.add('hidden'); showToast("Mode Pilih"); }else{ b.classList.remove('show'); f.classList.remove('hidden'); } applyFilter(); }
+    function toggleSelect(id) { if(selectedIds.has(id))selectedIds.delete(id); else selectedIds.add(id); applyFilter(); }
+    function batchDelete() { if(selectedIds.size===0)return showToast("Pilih!"); if(confirm("Hapus?")){ comics=comics.filter(c=>!selectedIds.has(c.id)); save(); toggleBatchMode(); showToast("Dihapus"); } }
+    function batchSetStatus(s) { if(selectedIds.size===0)return showToast("Pilih!"); comics.forEach(c=>{if(selectedIds.has(c.id))c.status=s}); save(); toggleBatchMode(); showToast("Updated"); }
+    function openModal() { document.querySelectorAll('#comicModal input,textarea').forEach(i=>i.value=''); document.getElementById('btnDelete').style.display='none'; document.getElementById('comicModal').style.display='flex'; }
+    function closeModal() { document.getElementById('comicModal').style.display='none'; }
+    function deleteComic() { if(confirm("Hapus?")){ comics=comics.filter(c=>c.id!==document.getElementById('editId').value); save(); closeModal(); showToast("Dihapus"); } }
+    function showToast(m) { const x=document.getElementById('toastBox'); x.innerText=m; x.className='show'; setTimeout(()=>x.className=x.className.replace('show',''),3000); }
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display=document.getElementById('sidebar').classList.contains('active')?'block':'none'; }
+    function toggleGenreList() { const d=document.getElementById('genreContainer'); d.style.display=d.style.display==='none'?'block':'none'; }
+    function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(comics)); a.download="backup_v16.json"; a.click(); }
+    function importData(i) { const r=new FileReader(); r.onload=e=>{try{comics=JSON.parse(e.target.result);save();location.reload();}catch(x){showToast("Error");}}; r.readAsText(i.files[0]); }
+    function renderGenres() { const c=document.getElementById('genreContainer'); c.innerHTML=''; const a=new Set(); comics.forEach(x=>x.genres.forEach(g=>a.add(g))); a.forEach(g=>{ const s=document.createElement('span'); s.className=`chip ${selectedGenres.has(g)?'active':''}`; s.innerText=g; s.onclick=()=>{if(selectedGenres.has(g))selectedGenres.delete(g); else selectedGenres.add(g); renderGenres(); applyFilter();}; c.appendChild(s); }); }
+    function randomizeComic() { if(comics.length===0)return showToast("Kosong"); const r=Math.floor(Math.random()*comics.length); openDetail(comics[r].id); showToast("Acak!"); toggleSidebar(); }
+
+</script>
+</body>
+</html>
