@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V21.1 (Fix Genre)</title>
+    <title>Komik Library V21.2 (Smooth UI)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -64,9 +64,30 @@
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 150; display: none; backdrop-filter: blur(3px); }
         .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #111; z-index: 160; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; overflow-y: auto; border-right: 1px solid #333; }
         .sidebar.active { left: 0; box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
-        .sidebar-header { font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; cursor: pointer; display: flex; justify-content: space-between; }
+        .sidebar-header { font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .chip { display: inline-block; font-size: 0.7rem; padding: 4px 10px; margin: 2px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ddd; cursor: pointer; border: 1px solid #333; transition: 0.2s; }
         .chip.active { background: var(--accent); color: black; font-weight: bold; }
+
+        /* --- ANIMASI GENRE BARU --- */
+        #genreContainer {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            margin-bottom: 0;
+        }
+        #genreContainer.show {
+            max-height: 1000px; /* Nilai max tinggi agar animasi jalan */
+            opacity: 1;
+            margin-bottom: 20px;
+        }
+        #genreToggleIcon {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #genreToggleIcon.rotate {
+            transform: rotate(180deg);
+        }
+        /* -------------------------- */
 
         .main-content { padding: 15px; }
         .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -207,7 +228,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header" onclick="randomizeComic()"><span>ACAK KOMIK</span><span class="material-icons">casino</span></div>
             <div class="sidebar-header" onclick="toggleGenreList()"><span>GENRE</span><span class="material-icons" id="genreToggleIcon">expand_more</span></div>
-            <div id="genreContainer" style="margin-bottom:20px; display:block"></div>
+            <div id="genreContainer"></div>
             <div class="sidebar-header">URUTKAN</div>
             <select id="sortSelect" onchange="applyFilter()" style="margin-bottom:20px">
                 <option value="lastRead">Terakhir Update</option>
@@ -650,7 +671,13 @@
             });
         };
 
-        window.toggleGenreList = () => { const d=document.getElementById('genreContainer'); d.style.display=d.style.display==='none'?'block':'none'; };
+        window.toggleGenreList = () => { 
+            const box = document.getElementById('genreContainer');
+            const icon = document.getElementById('genreToggleIcon');
+            box.classList.toggle('show');
+            icon.classList.toggle('rotate');
+        };
+        
         window.randomizeComic = () => { if(comics.length===0)return showToast("Kosong"); const r=Math.floor(Math.random()*comics.length); openDetail(comics[r].id); showToast("Acak!"); document.getElementById('sidebar').classList.remove('active'); };
         window.exportData = () => { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(comics)); a.download="backup_cloud.json"; a.click(); };
         window.showToast = (m) => { const x=document.getElementById('toastBox'); x.innerText=m; x.className='show'; setTimeout(()=>x.className='',3000); };
