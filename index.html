@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V20 (Ultimate Cloud)</title>
+    <title>Komik Library V21 (Auto Login)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -287,6 +287,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
+        // --- KONFIGURASI FIREBASE KAMU ---
         const firebaseConfig = {
             apiKey: "AIzaSyDMBXZWoCVSuEmzqOO2lRKj9Os7tghkM8I",
             authDomain: "komikbase-db619.firebaseapp.com",
@@ -329,10 +330,16 @@
             inp.focus();
         };
 
-        window.doLogout = () => location.reload();
+        window.doLogout = () => {
+            localStorage.removeItem('userRole'); // Hapus sesi
+            location.reload();
+        };
 
         function loginSuccess(role) {
             currentUser = role;
+            // SIMPAN SESI DI HP
+            localStorage.setItem('userRole', role);
+
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             
@@ -362,7 +369,7 @@
 
         // --- RENDER & LOGIC ---
         function init() { 
-            if(localStorage.getItem('theme')==='light') toggleTheme(false); // Restore theme
+            if(localStorage.getItem('theme')==='light') toggleTheme(false); 
             renderGenres(); 
             applyFilter(); 
         }
@@ -634,6 +641,12 @@
         window.showToast = (m) => { const x=document.getElementById('toastBox'); x.innerText=m; x.className='show'; setTimeout(()=>x.className='',3000); };
         window.openSource = (url) => { if(!url||url==='undefined')showToast("Link Kosong"); else window.open(url.startsWith('http')?url:'https://'+url, '_blank'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display=document.getElementById('sidebar').classList.contains('active')?'block':'none'; };
+
+        // AUTO LOGIN CHECK
+        const savedRole = localStorage.getItem('userRole');
+        if(savedRole) {
+            loginSuccess(savedRole);
+        }
 
     </script>
 </body>
