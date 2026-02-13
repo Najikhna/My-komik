@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V22 (Final Fix)</title>
+    <title>Komik Library V23 (Mihon Import)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -70,14 +70,10 @@
         #genreToggleIcon { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #genreToggleIcon.rotate { transform: rotate(180deg); }
 
-        /* GRID SYSTEM (UPDATED 4 ITEMS PC) */
+        /* GRID SYSTEM (4 ITEMS) */
         .main-content { padding: 15px; }
-        .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } /* Jarak dikurangi */
-        
-        @media (min-width: 600px) { 
-            /* PC MODE: Tetap 4 item per row, tidak auto-fill yang bisa jadi 6 */
-            .comic-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; } 
-        }
+        .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        @media (min-width: 600px) { .comic-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; } }
 
         /* CARD STYLE */
         .comic-card { position: relative; border-radius: 8px; overflow: hidden; background: var(--glass-bg); border: var(--glass-border); box-shadow: var(--glass-shadow); display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
@@ -85,14 +81,12 @@
 
         .card-img-wrapper { width: 100%; aspect-ratio: 2/3; overflow: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
-        
         .comic-grid.no-cover .card-img-wrapper { aspect-ratio: 0; height: 0; opacity: 0; margin-bottom: 0; }
         .comic-grid.no-cover .comic-card { min-height: 100px; justify-content: center; }
         
         .card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 10%, rgba(0,0,0,0.5) 80%, transparent 100%); padding: 30px 5px 6px 5px; transition: all 0.3s; }
         .comic-grid.no-cover .card-overlay { position: relative; background: none; padding: 10px; height: 100%; justify-content: center; display: flex; flex-direction: column; }
 
-        /* TITLE (FIX: No Underline, Normal Style) */
         .card-title { font-size: 0.7rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; text-decoration: none; text-shadow: 0 1px 2px black; }
         .comic-grid.no-cover .card-title { white-space: normal; line-height: 1.3; font-size: 0.85rem; }
 
@@ -132,17 +126,8 @@
         .detail-header { position: relative; height: 380px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; }
         .detail-cover-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; filter: blur(15px); }
         
-        /* DETAIL COVER (ZOOMABLE) */
-        .detail-cover-fg { 
-            position: relative; height: 90%; width: auto; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; 
-            cursor: zoom-in; transition: 0.3s;
-        }
-        .detail-cover-fg.zoom-active {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            object-fit: contain; background: rgba(0,0,0,0.95); z-index: 9999;
-            border: none; border-radius: 0; cursor: zoom-out;
-        }
+        .detail-cover-fg { position: relative; height: 90%; width: auto; box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; cursor: zoom-in; transition: 0.3s; }
+        .detail-cover-fg.zoom-active { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: contain; background: rgba(0,0,0,0.95); z-index: 9999; border: none; border-radius: 0; cursor: zoom-out; }
 
         .detail-close { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 210; backdrop-filter: blur(4px); transition: 0.2s; }
         .detail-close:active { transform: scale(0.9); }
@@ -200,9 +185,7 @@
                 <span class="material-icons eye-btn" id="eyeIcon" onmousedown="togglePassword(event)" ontouchstart="togglePassword(event)">visibility_off</span>
             </div>
             <button onclick="attemptLogin()" class="login-btn">MASUK</button>
-            <div class="guest-card">
-                <div>Untuk Tamu / Pengunjung:</div>User: <strong>guest</strong> | Pass: <strong>guest-guest</strong>
-            </div>
+            <div class="guest-card"><div>Untuk Tamu / Pengunjung:</div>User: <strong>guest</strong> | Pass: <strong>guest-guest</strong></div>
         </div>
     </div>
 
@@ -241,6 +224,8 @@
             <div id="backupMenu">
                 <div class="sidebar-header">DATA</div>
                 <button onclick="exportData()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:6px; margin-bottom:5px; text-align:left;">📥 Backup Local</button>
+                <input type="file" id="mihonFile" hidden onchange="importMihonData(this)">
+                <button onclick="document.getElementById('mihonFile').click()" style="width:100%; padding:10px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:6px; margin-bottom:5px; text-align:left;">📥 Import Mihon (JSON)</button>
                 <div style="margin-top:20px; font-size:0.7rem; color:#aaa; text-align:center">Total: <span id="totalCount">0</span> Komik</div>
             </div>
         </aside>
@@ -262,7 +247,6 @@
                 <div id="detTitle" class="detail-title">Judul</div>
                 <div id="detAuthor" class="detail-author">Author</div>
                 <div id="detGenres" class="detail-genres"></div>
-
                 <div class="detail-stats">
                     <div class="stat-box"><small>Status</small><strong id="detStatus">-</strong></div>
                     <div class="stat-box"><small>Rating</small><strong id="detRating">-</strong></div>
@@ -315,7 +299,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-        // --- KONFIGURASI FIREBASE KAMU ---
+        // --- KONFIGURASI FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDMBXZWoCVSuEmzqOO2lRKj9Os7tghkM8I",
             authDomain: "komikbase-db619.firebaseapp.com",
@@ -330,7 +314,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- GLOBAL & STATE ---
+        // --- GLOBAL VARIABLES ---
         let comics = [];
         let selectedGenres = new Set();
         let isBatchMode = false;
@@ -339,7 +323,69 @@
         let currentCategory = 'All';
         let currentDetailId = null;
 
-        // --- EXPOSED FUNCTIONS ---
+        // --- MIHON IMPORT FEATURE ---
+        window.importMihonData = (el) => {
+            if (currentUser !== 'admin') return alert("Hanya Admin yang bisa import!");
+            const file = el.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const backupList = data.backupManga || [];
+                    
+                    if (backupList.length === 0) return window.showToast("File kosong / Format salah");
+                    
+                    if (confirm(`Ditemukan ${backupList.length} komik dari backup Mihon. Import sekarang?`)) {
+                        window.showToast(`Mengimport ${backupList.length} item...`);
+                        
+                        let importedCount = 0;
+                        for (const m of backupList) {
+                            const id = m.title.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "_" + Date.now() + Math.floor(Math.random()*1000);
+                            
+                            // Map Status: 1=Ongoing, 2=Completed, Others=Hiatus
+                            let webStatus = "Ongoing";
+                            if (m.status === 2) webStatus = "Completed";
+                            else if (m.status > 2) webStatus = "Hiatus";
+
+                            // Calculate Read & Total
+                            const totalCh = m.chapters ? m.chapters.length : 0;
+                            // Hitung chapter yang dibaca (yang punya property 'read': true)
+                            const readCh = m.chapters ? m.chapters.filter(c => c.read).length : 0;
+
+                            const obj = {
+                                id: id,
+                                title: m.title || "No Title",
+                                author: m.author || "",
+                                synopsis: m.description || "",
+                                review: "",
+                                category: "Manhwa", // Default category
+                                status: webStatus,
+                                rating: 0,
+                                read: readCh,
+                                total: totalCh,
+                                genres: m.genre || [],
+                                source: "", 
+                                image: m.thumbnailUrl || "",
+                                dateAdded: Date.now(),
+                                lastUpdate: Date.now()
+                            };
+
+                            // Save to Firebase
+                            await set(ref(db, 'comics/' + id), obj);
+                            importedCount++;
+                        }
+                        window.showToast(`Sukses! ${importedCount} komik masuk.`);
+                    }
+                } catch (err) {
+                    alert("Error parsing JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // --- AUTH & SYSTEM ---
         window.attemptLogin = () => {
             const u = document.getElementById('loginUser').value;
             const p = document.getElementById('loginPass').value;
@@ -359,14 +405,13 @@
         };
 
         window.doLogout = () => {
-            localStorage.removeItem('userRole'); // Hapus sesi
+            localStorage.removeItem('userRole'); 
             location.reload();
         };
 
         function loginSuccess(role) {
             currentUser = role;
             localStorage.setItem('userRole', role);
-
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             
@@ -388,7 +433,7 @@
                 document.getElementById('loadingBar').style.width = '100%';
                 const data = snapshot.val();
                 comics = data ? Object.values(data) : [];
-                init();
+                init(); 
                 setTimeout(()=>document.getElementById('loadingBar').style.width = '0%', 500);
             });
         }
@@ -458,7 +503,6 @@
                 let titleClass = c.status==='Ongoing'?'text-ongoing':(c.status==='Completed'?'text-completed':'text-hiatus');
                 
                 let cardAction = `openDetail('${c.id}')`;
-                let titleAction = `openSource('${c.source}')`; // Tidak dipakai lagi di UI baru
                 if(isBatchMode) { cardAction = `toggleSelect('${c.id}')`; }
 
                 let quickAddBtn = (currentUser==='admin' && !isBatchMode) ? 
@@ -466,7 +510,6 @@
 
                 const isSelected = selectedIds.has(c.id) ? 'selected' : '';
                 
-                // NEW UI: Onclick di parent, Title polos
                 const html = `
                     <div class="comic-card fade-in ${isSelected}" data-status="${c.status}" style="animation-delay:${index*0.05}s" onclick="${cardAction}">
                         <div class="card-img-wrapper">
@@ -610,7 +653,7 @@
             } catch(e) { showToast("API Error"); }
         };
 
-        // --- HELPERS (MODALS, ETC) ---
+        // --- HELPERS ---
         window.openModal = () => { document.querySelectorAll('#comicModal input,textarea').forEach(i=>i.value=''); document.getElementById('editId').value=''; document.getElementById('btnDelete').style.display='none'; document.getElementById('comicModal').style.display='flex'; };
         window.closeModal = () => document.getElementById('comicModal').style.display='none';
         
@@ -623,7 +666,6 @@
             document.getElementById('detTotal').innerText = c.total || '?'; document.getElementById('detRead').innerText = c.read || '0';
             document.getElementById('detSynopsis').innerText = c.synopsis || '-'; document.getElementById('detReview').innerText = c.review || '-';
             
-            // RESET ZOOM
             document.getElementById('detFg').classList.remove('zoom-active');
 
             const genreCt = document.getElementById('detGenres'); genreCt.innerHTML = '';
@@ -642,11 +684,7 @@
             document.getElementById('detailModal').style.display = 'block';
         };
 
-        // NEW: ZOOM TOGGLE FUNCTION
-        window.toggleZoom = (el) => {
-            el.classList.toggle('zoom-active');
-        };
-
+        window.toggleZoom = (el) => { el.classList.toggle('zoom-active'); };
         window.closeDetail = () => document.getElementById('detailModal').style.display='none';
         window.openSourceFromDetail = () => { const c=comics.find(x=>x.id===currentDetailId); window.open(c.source || '#', '_blank'); };
         window.editFromDetail = () => {
