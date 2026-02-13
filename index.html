@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V23 (Mihon Import)</title>
+    <title>Komik Library V23.1 (Turbo Import)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -297,7 +297,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { getDatabase, ref, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
         // --- KONFIGURASI FIREBASE ---
         const firebaseConfig = {
@@ -323,7 +323,7 @@
         let currentCategory = 'All';
         let currentDetailId = null;
 
-        // --- MIHON IMPORT FEATURE ---
+        // --- MIHON IMPORT FEATURE (BATCH UPDATE FIX) ---
         window.importMihonData = (el) => {
             if (currentUser !== 'admin') return alert("Hanya Admin yang bisa import!");
             const file = el.files[0];
@@ -337,21 +337,22 @@
                     
                     if (backupList.length === 0) return window.showToast("File kosong / Format salah");
                     
-                    if (confirm(`Ditemukan ${backupList.length} komik dari backup Mihon. Import sekarang?`)) {
-                        window.showToast(`Mengimport ${backupList.length} item...`);
+                    if (confirm(`Ditemukan ${backupList.length} komik. Import sekarang? (Proses Cepat)`)) {
+                        window.showToast(`Memproses ${backupList.length} item...`);
                         
-                        let importedCount = 0;
+                        // KUMPULKAN SEMUA DATA DULU (BATCH)
+                        const updates = {};
+                        
                         for (const m of backupList) {
                             const id = m.title.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "_" + Date.now() + Math.floor(Math.random()*1000);
                             
-                            // Map Status: 1=Ongoing, 2=Completed, Others=Hiatus
+                            // Map Status
                             let webStatus = "Ongoing";
                             if (m.status === 2) webStatus = "Completed";
                             else if (m.status > 2) webStatus = "Hiatus";
 
-                            // Calculate Read & Total
+                            // Hitung Chapter
                             const totalCh = m.chapters ? m.chapters.length : 0;
-                            // Hitung chapter yang dibaca (yang punya property 'read': true)
                             const readCh = m.chapters ? m.chapters.filter(c => c.read).length : 0;
 
                             const obj = {
@@ -360,7 +361,7 @@
                                 author: m.author || "",
                                 synopsis: m.description || "",
                                 review: "",
-                                category: "Manhwa", // Default category
+                                category: "Manhwa", 
                                 status: webStatus,
                                 rating: 0,
                                 read: readCh,
@@ -372,11 +373,13 @@
                                 lastUpdate: Date.now()
                             };
 
-                            // Save to Firebase
-                            await set(ref(db, 'comics/' + id), obj);
-                            importedCount++;
+                            // Masukkan ke antrian update
+                            updates['comics/' + id] = obj;
                         }
-                        window.showToast(`Sukses! ${importedCount} komik masuk.`);
+
+                        // KIRIM SEKALI SAJA KE FIREBASE
+                        await update(ref(db), updates);
+                        window.showToast(`Sukses! ${backupList.length} komik masuk.`);
                     }
                 } catch (err) {
                     alert("Error parsing JSON: " + err.message);
