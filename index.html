@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V21.2 (Smooth UI)</title>
+    <title>Komik Library V22 (Final Fix)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -32,11 +32,7 @@
         .input-group { position: relative; margin-bottom: 15px; }
         .login-input { width: 100%; padding: 12px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 1rem; transition: 0.3s; }
         .login-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.15); }
-        
         .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #aaa; cursor: pointer; padding: 5px; z-index: 10; transition: 0.2s; }
-        .eye-btn:hover { color: var(--accent); }
-        .eye-btn:active { transform: translateY(-50%) scale(0.8); }
-
         .login-btn { width: 100%; padding: 12px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-bottom: 20px; transition: 0.2s; }
         .login-btn:active { transform: scale(0.95); }
         .guest-card { background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; font-size: 0.8rem; color: #ccc; }
@@ -68,33 +64,23 @@
         .chip { display: inline-block; font-size: 0.7rem; padding: 4px 10px; margin: 2px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ddd; cursor: pointer; border: 1px solid #333; transition: 0.2s; }
         .chip.active { background: var(--accent); color: black; font-weight: bold; }
 
-        /* --- ANIMASI GENRE BARU --- */
-        #genreContainer {
-            max-height: 0;
-            overflow: hidden;
-            opacity: 0;
-            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-            margin-bottom: 0;
-        }
-        #genreContainer.show {
-            max-height: 1000px; /* Nilai max tinggi agar animasi jalan */
-            opacity: 1;
-            margin-bottom: 20px;
-        }
-        #genreToggleIcon {
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        #genreToggleIcon.rotate {
-            transform: rotate(180deg);
-        }
-        /* -------------------------- */
+        /* ANIMASI GENRE */
+        #genreContainer { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; margin-bottom: 0; }
+        #genreContainer.show { max-height: 1000px; opacity: 1; margin-bottom: 20px; }
+        #genreToggleIcon { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #genreToggleIcon.rotate { transform: rotate(180deg); }
 
+        /* GRID SYSTEM (UPDATED 4 ITEMS PC) */
         .main-content { padding: 15px; }
-        .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        @media (min-width: 600px) { .comic-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+        .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } /* Jarak dikurangi */
+        
+        @media (min-width: 600px) { 
+            /* PC MODE: Tetap 4 item per row, tidak auto-fill yang bisa jadi 6 */
+            .comic-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; } 
+        }
 
-        /* CARD STYLE & ANIMATIONS */
-        .comic-card { position: relative; border-radius: 8px; overflow: hidden; background: var(--glass-bg); border: var(--glass-border); box-shadow: var(--glass-shadow); display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s; }
+        /* CARD STYLE */
+        .comic-card { position: relative; border-radius: 8px; overflow: hidden; background: var(--glass-bg); border: var(--glass-border); box-shadow: var(--glass-shadow); display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
         .comic-card:active { transform: scale(0.96); }
 
         .card-img-wrapper { width: 100%; aspect-ratio: 2/3; overflow: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
@@ -106,7 +92,8 @@
         .card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 10%, rgba(0,0,0,0.5) 80%, transparent 100%); padding: 30px 5px 6px 5px; transition: all 0.3s; }
         .comic-grid.no-cover .card-overlay { position: relative; background: none; padding: 10px; height: 100%; justify-content: center; display: flex; flex-direction: column; }
 
-        .card-title { font-size: 0.7rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; text-decoration: underline; text-shadow: 0 1px 2px black; }
+        /* TITLE (FIX: No Underline, Normal Style) */
+        .card-title { font-size: 0.7rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; text-decoration: none; text-shadow: 0 1px 2px black; }
         .comic-grid.no-cover .card-title { white-space: normal; line-height: 1.3; font-size: 0.85rem; }
 
         .text-ongoing { color: var(--color-ongoing); } .text-completed { color: var(--color-completed); } .text-hiatus { color: var(--color-hiatus); }
@@ -137,22 +124,32 @@
         #toastBox { visibility: hidden; min-width: 250px; background-color: #222; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); border: 1px solid var(--accent); opacity: 0; transition: 0.3s; }
         #toastBox.show { visibility: visible; opacity: 1; bottom: 50px; }
 
-        /* LOADING BAR */
         #loadingBar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); width: 0%; z-index: 200; transition: 0.3s; }
 
-        /* DETAIL MODAL (FIXED NO CROP) */
+        /* DETAIL MODAL */
         .detail-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; overflow-y: auto; display: none; padding: 20px 0; animation: fadeIn 0.3s; }
         .detail-content { background: #1a1a1a; width: 90%; max-width: 500px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; box-shadow: 0 10px 40px black; }
         .detail-header { position: relative; height: 380px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; }
         .detail-cover-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; filter: blur(15px); }
-        .detail-cover-fg { position: relative; height: 90%; width: auto; box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; }
+        
+        /* DETAIL COVER (ZOOMABLE) */
+        .detail-cover-fg { 
+            position: relative; height: 90%; width: auto; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; 
+            cursor: zoom-in; transition: 0.3s;
+        }
+        .detail-cover-fg.zoom-active {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: contain; background: rgba(0,0,0,0.95); z-index: 9999;
+            border: none; border-radius: 0; cursor: zoom-out;
+        }
+
         .detail-close { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 210; backdrop-filter: blur(4px); transition: 0.2s; }
         .detail-close:active { transform: scale(0.9); }
         
         .detail-body { padding: 25px 20px; }
         .detail-title { font-size: 1.4rem; font-weight: 800; color: white; margin-bottom: 5px; line-height: 1.2; text-align:center; }
         .detail-author { font-size: 0.9rem; color: var(--accent); margin-bottom: 10px; font-weight: 500; text-align:center; }
-        /* NEW: Genre Container di Detail */
         .detail-genres { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 20px; }
 
         .detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
@@ -183,6 +180,11 @@
         .blink { animation: blink 0.3s; }
         @keyframes blink { 0%, 100% { transform: translateY(-50%) scaleY(1); } 50% { transform: translateY(-50%) scaleY(0.1); } }
     </style>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00f2fe">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -254,7 +256,7 @@
             <button class="detail-close" onclick="closeDetail()">×</button>
             <div class="detail-header">
                 <img id="detBg" class="detail-cover-bg" src="">
-                <img id="detFg" class="detail-cover-fg" src="">
+                <img id="detFg" class="detail-cover-fg" src="" onclick="toggleZoom(this)">
             </div>
             <div class="detail-body">
                 <div id="detTitle" class="detail-title">Judul</div>
@@ -363,7 +365,6 @@
 
         function loginSuccess(role) {
             currentUser = role;
-            // SIMPAN SESI DI HP
             localStorage.setItem('userRole', role);
 
             document.getElementById('loginSection').style.display = 'none';
@@ -381,14 +382,13 @@
                 document.getElementById('btnEditDetail').style.display = 'flex';
             }
 
-            // LOAD DATA DARI FIREBASE
             document.getElementById('loadingBar').style.width = '50%';
             const comicRef = ref(db, 'comics');
             onValue(comicRef, (snapshot) => {
                 document.getElementById('loadingBar').style.width = '100%';
                 const data = snapshot.val();
                 comics = data ? Object.values(data) : [];
-                init(); // Re-render logic
+                init();
                 setTimeout(()=>document.getElementById('loadingBar').style.width = '0%', 500);
             });
         }
@@ -458,22 +458,24 @@
                 let titleClass = c.status==='Ongoing'?'text-ongoing':(c.status==='Completed'?'text-completed':'text-hiatus');
                 
                 let cardAction = `openDetail('${c.id}')`;
-                let titleAction = `openSource('${c.source}')`;
-                if(isBatchMode) { cardAction = `toggleSelect('${c.id}')`; titleAction = `toggleSelect('${c.id}')`; }
+                let titleAction = `openSource('${c.source}')`; // Tidak dipakai lagi di UI baru
+                if(isBatchMode) { cardAction = `toggleSelect('${c.id}')`; }
 
                 let quickAddBtn = (currentUser==='admin' && !isBatchMode) ? 
                     `<div class="btn-quick-add" onclick="quickAdd('${c.id}', event)">+1</div>` : '';
 
                 const isSelected = selectedIds.has(c.id) ? 'selected' : '';
+                
+                // NEW UI: Onclick di parent, Title polos
                 const html = `
-                    <div class="comic-card fade-in ${isSelected}" data-status="${c.status}" style="animation-delay:${index*0.05}s">
+                    <div class="comic-card fade-in ${isSelected}" data-status="${c.status}" style="animation-delay:${index*0.05}s" onclick="${cardAction}">
                         <div class="card-img-wrapper">
-                            <img src="${img}" class="card-img" onclick="${isBatchMode?cardAction:''}" loading="lazy">
+                            <img src="${img}" class="card-img" loading="lazy">
                             <div class="badge-ch">${read}</div>
                             ${quickAddBtn}
                         </div>
-                        <div class="card-overlay" onclick="${cardAction}" style="pointer-events:auto; cursor:pointer">
-                            <div class="card-title ${titleClass}" onclick="event.stopPropagation(); ${titleAction}">${c.title}</div>
+                        <div class="card-overlay">
+                            <div class="card-title ${titleClass}">${c.title}</div>
                             <div class="card-meta"><span>${chInfo}</span><span>${starHtml}</span></div>
                             <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
                         </div>
@@ -490,7 +492,6 @@
             if(!title) return showToast("Judul wajib!");
 
             const id = document.getElementById('editId').value || Date.now().toString();
-            // Cek existing untuk tanggal
             const existing = comics.find(c => c.id === id);
             
             const obj = {
@@ -622,7 +623,9 @@
             document.getElementById('detTotal').innerText = c.total || '?'; document.getElementById('detRead').innerText = c.read || '0';
             document.getElementById('detSynopsis').innerText = c.synopsis || '-'; document.getElementById('detReview').innerText = c.review || '-';
             
-            // --- NEW: RENDER GENRES DI DETAIL ---
+            // RESET ZOOM
+            document.getElementById('detFg').classList.remove('zoom-active');
+
             const genreCt = document.getElementById('detGenres'); genreCt.innerHTML = '';
             if (c.genres && c.genres.length > 0) {
                 c.genres.forEach(g => {
@@ -630,7 +633,6 @@
                     genreCt.appendChild(s);
                 });
             }
-            // ------------------------------------
 
             const st = document.getElementById('detStatus');
             if(c.status==='Ongoing') st.style.color='var(--color-ongoing)';
@@ -639,6 +641,12 @@
 
             document.getElementById('detailModal').style.display = 'block';
         };
+
+        // NEW: ZOOM TOGGLE FUNCTION
+        window.toggleZoom = (el) => {
+            el.classList.toggle('zoom-active');
+        };
+
         window.closeDetail = () => document.getElementById('detailModal').style.display='none';
         window.openSourceFromDetail = () => { const c=comics.find(x=>x.id===currentDetailId); window.open(c.source || '#', '_blank'); };
         window.editFromDetail = () => {
@@ -684,7 +692,6 @@
         window.openSource = (url) => { if(!url||url==='undefined')showToast("Link Kosong"); else window.open(url.startsWith('http')?url:'https://'+url, '_blank'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display=document.getElementById('sidebar').classList.contains('active')?'block':'none'; };
 
-        // AUTO LOGIN CHECK
         const savedRole = localStorage.getItem('userRole');
         if(savedRole) {
             loginSuccess(savedRole);
