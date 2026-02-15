@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V24 (Secure Blur)</title>
+    <title>My Komik Aseli</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00f2fe">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MyKomik">
+
     <style>
         :root {
             --color-ongoing: #4facfe; --color-completed: #ffa726; --color-hiatus: #ff5252;
@@ -70,7 +76,7 @@
         #genreToggleIcon { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #genreToggleIcon.rotate { transform: rotate(180deg); }
 
-        /* GRID SYSTEM */
+        /* GRID SYSTEM (4 ITEMS) */
         .main-content { padding: 15px; }
         .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         @media (min-width: 600px) { .comic-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; } }
@@ -139,7 +145,7 @@
             cursor: pointer; opacity: 0; pointer-events: none; transition: 0.3s;
         }
         .detail-header.blurred .hidden-overlay { opacity: 1; pointer-events: auto; }
-        .detail-header.blurred .detail-cover-fg { filter: blur(20px); pointer-events: none; } /* Blur gambar asli */
+        .detail-header.blurred .detail-cover-fg { filter: blur(20px); pointer-events: none; }
         
         .hidden-icon { font-size: 3rem; color: #aaa; margin-bottom: 10px; }
         .hidden-text { font-size: 0.8rem; color: #ddd; font-weight: bold; letter-spacing: 1px; }
@@ -180,11 +186,6 @@
         .blink { animation: blink 0.3s; }
         @keyframes blink { 0%, 100% { transform: translateY(-50%) scaleY(1); } 50% { transform: translateY(-50%) scaleY(0.1); } }
     </style>
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00f2fe">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -242,6 +243,16 @@
                 <input type="file" id="mihonFile" hidden onchange="importMihonData(this)">
                 <button onclick="document.getElementById('mihonFile').click()" style="width:100%; padding:10px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:6px; margin-bottom:5px; text-align:left;">📥 Import Mihon (JSON)</button>
                 <div style="margin-top:20px; font-size:0.7rem; color:#aaa; text-align:center">Total: <span id="totalCount">0</span> Komik</div>
+            </div>
+
+            <div id="installSection" style="display:none; margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
+                <div class="sidebar-header">APLIKASI</div>
+                <button id="btnInstall" onclick="installPWA()" style="width:100%; padding:10px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:6px; text-align:left; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons">download</span> Install Aplikasi
+                </button>
+                <div style="margin-top:5px; font-size:0.7rem; color:#666; text-align:center;">
+                    My Komik Aseli<br>Versi 25.0 (Beta)
+                </div>
             </div>
         </aside>
 
@@ -342,6 +353,30 @@
         let currentUser = null; 
         let currentCategory = 'All';
         let currentDetailId = null;
+        
+        // --- PWA INSTALL LOGIC (NEW) ---
+        let deferredPrompt;
+        const installSection = document.getElementById('installSection');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installSection.style.display = 'block'; // Tampilkan tombol install jika browser support
+        });
+
+        window.installPWA = async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response: ${outcome}`);
+            deferredPrompt = null;
+            installSection.style.display = 'none';
+        };
+
+        window.addEventListener('appinstalled', () => {
+            installSection.style.display = 'none';
+            window.showToast("Aplikasi Terinstall!");
+        });
 
         // --- MIHON IMPORT ---
         window.importMihonData = (el) => {
@@ -686,7 +721,6 @@
             const list = document.getElementById('comicList');
             const detHeader = document.getElementById('detHeader');
             
-            // Jika grid di mode "No Cover", maka detail otomatis BLUR
             if (list.classList.contains('no-cover')) {
                 detHeader.classList.add('blurred');
             } else {
@@ -709,13 +743,11 @@
             document.getElementById('detailModal').style.display = 'block';
         };
 
-        // NEW: UNBLUR FUNCTION
         window.unblurDetail = () => {
             document.getElementById('detHeader').classList.remove('blurred');
         };
 
         window.toggleZoom = (el) => { 
-            // Cek kalau masih blur, jangan zoom dulu
             if(document.getElementById('detHeader').classList.contains('blurred')) return;
             el.classList.toggle('zoom-active'); 
         };
