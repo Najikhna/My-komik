@@ -58,7 +58,7 @@
         @keyframes spinIcon { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(0.8); } 100% { transform: rotate(360deg) scale(1); } }
         .rotate-active { animation: spinIcon 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* KATEGORI TANPA ALL */
+        /* CATEGORY BAR (Without All) */
         .category-bar { position: sticky; top: 60px; z-index: 95; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 10px 15px; display: flex; gap: 8px; overflow-x: auto; border-bottom: var(--glass-border); scrollbar-width: none; }
         .category-bar::-webkit-scrollbar { display: none; }
         .cat-btn { white-space: nowrap; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.3s; }
@@ -71,22 +71,18 @@
         .chip { display: inline-block; font-size: 0.7rem; padding: 4px 10px; margin: 2px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ddd; cursor: pointer; border: 1px solid #333; transition: 0.2s; }
         .chip.active { background: var(--accent); color: black; font-weight: bold; }
 
-        /* ANIMASI DADU BERPUTAR */
         @keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.2); } }
         .spinning { animation: diceSpin 0.5s ease-out; color: var(--accent) !important; }
 
-        /* ANIMASI GENRE */
         #genreContainer { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; margin-bottom: 0; }
         #genreContainer.show { max-height: 1000px; opacity: 1; margin-bottom: 20px; }
         #genreToggleIcon { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #genreToggleIcon.rotate { transform: rotate(180deg); }
 
-        /* GRID SYSTEM (4 ITEMS) */
         .main-content { padding: 15px; }
         .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         @media (min-width: 600px) { .comic-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; } }
 
-        /* CARD STYLE */
         .comic-card { position: relative; border-radius: 8px; overflow: hidden; background: var(--glass-bg); border: var(--glass-border); box-shadow: var(--glass-shadow); display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
         .comic-card:active { transform: scale(0.96); }
 
@@ -241,13 +237,13 @@
                 <div style="margin-top:20px; font-size:0.7rem; color:#aaa; text-align:center">Total: <span id="totalCount">0</span> Komik</div>
             </div>
 
-            <div id="installSection" style="display:none; margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
+            <div id="installSection" style="margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
                 <div class="sidebar-header">APLIKASI</div>
                 <button id="btnInstall" onclick="installPWA()" style="width:100%; padding:10px; background:var(--accent); color:black; font-weight:bold; border:none; border-radius:6px; text-align:left; display: flex; align-items: center; gap: 8px;">
-                    <span class="material-icons">download</span> Install Aplikasi
+                    <span class="material-icons">download</span> Download Aplikasi
                 </button>
-                <div style="margin-top:5px; font-size:0.7rem; color:#666; text-align:center;">
-                    My Komik Aseli<br>Versi 25.1 (Final)
+                <div id="appVersion" style="margin-top:5px; font-size:0.7rem; color:#666; text-align:center;">
+                    My Komik Aseli<br>Versi 25.2 (PWA Fix)
                 </div>
             </div>
         </aside>
@@ -347,32 +343,57 @@
         let isBatchMode = false;
         let selectedIds = new Set();
         let currentUser = null; 
-        let currentCategory = 'Manhwa'; // DEFAULT SEKARANG MANHWA
+        let currentCategory = 'Manhwa'; // DEFAULT
         let currentDetailId = null;
         
-        let deferredPrompt;
-        const installSection = document.getElementById('installSection');
+        // --- PWA LOGIC FIX ---
+        // REGISTER SERVICE WORKER (WAJIB)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Fail', err));
+            });
+        }
 
+        let deferredPrompt;
+        const btnInstall = document.getElementById('btnInstall');
+
+        // Saat browser siap install, simpan event-nya
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installSection.style.display = 'block';
+            btnInstall.innerHTML = '<span class="material-icons">download</span> Download Aplikasi';
+            btnInstall.disabled = false;
+            btnInstall.style.opacity = "1";
         });
+
+        // Kalau sudah terinstall, ubah tombolnya
+        window.addEventListener('appinstalled', () => {
+            btnInstall.innerHTML = '<span class="material-icons">check_circle</span> Aplikasi Aktif';
+            btnInstall.disabled = true;
+            btnInstall.style.opacity = "0.7";
+            deferredPrompt = null;
+        });
+
+        // Cek jika sedang dibuka di mode aplikasi (Standalone)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            btnInstall.innerHTML = '<span class="material-icons">check_circle</span> Aplikasi Aktif';
+            btnInstall.disabled = true;
+            btnInstall.style.opacity = "0.7";
+        }
 
         window.installPWA = async () => {
-            if (!deferredPrompt) return;
+            if (!deferredPrompt) {
+                alert("Aplikasi sudah terinstall atau browser tidak mendukung.");
+                return;
+            }
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User response: ${outcome}`);
             deferredPrompt = null;
-            installSection.style.display = 'none';
         };
 
-        window.addEventListener('appinstalled', () => {
-            installSection.style.display = 'none';
-            window.showToast("Aplikasi Terinstall!");
-        });
-
+        // --- MIHON IMPORT ---
         window.importMihonData = (el) => {
             if (currentUser !== 'admin') return alert("Hanya Admin yang bisa import!");
             const file = el.files[0];
@@ -519,7 +540,6 @@
             let res = comics.filter(c => {
                 const titleMatch = c.title.toLowerCase().includes(s);
                 const genreMatch = selectedGenres.size === 0 || (c.genres && c.genres.some(g => selectedGenres.has(g)));
-                // HAPUS LOGIKA 'ALL', HANYA SESUAI KATEGORI
                 const catMatch = c.category === currentCategory;
                 return titleMatch && genreMatch && catMatch;
             });
@@ -709,7 +729,6 @@
             
             document.getElementById('detFg').classList.remove('zoom-active');
 
-            // AUTO BLUR CHECK SAAT OPEN
             const list = document.getElementById('comicList');
             const detHeader = document.getElementById('detHeader');
             if (list.classList.contains('no-cover')) {
@@ -743,17 +762,13 @@
             el.classList.toggle('zoom-active'); 
         };
 
-        // FIX: CLOSE DETAIL RESET STATE
         window.closeDetail = () => {
             const modal = document.getElementById('detailModal');
             const header = document.getElementById('detHeader');
             const img = document.getElementById('detFg');
             
             modal.style.display='none';
-            // Reset Zoom
             img.classList.remove('zoom-active');
-            // Reset Blur (Supaya tidak 'stuck' kalau buka komik lain)
-            // Blur akan diset ulang saat openDetail() dipanggil lagi.
             header.classList.remove('blurred');
         };
 
@@ -795,19 +810,16 @@
             icon.classList.toggle('rotate');
         };
         
-        // ANIMASI DADU
         window.randomizeComic = () => { 
             if(comics.length===0) return showToast("Kosong"); 
             
             const icon = document.getElementById('diceIcon');
-            icon.classList.add('spinning'); // Mulai putar
+            icon.classList.add('spinning'); 
 
-            // Tunggu 0.5 detik baru buka
             setTimeout(() => {
                 icon.classList.remove('spinning');
                 const r = Math.floor(Math.random()*comics.length);
                 openDetail(comics[r].id);
-                // Tutup sidebar otomatis biar enak
                 document.getElementById('sidebar').classList.remove('active');
                 document.querySelector('.sidebar-overlay').style.display = 'none';
             }, 500);
