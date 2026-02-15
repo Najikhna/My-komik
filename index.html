@@ -58,6 +58,7 @@
         @keyframes spinIcon { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(0.8); } 100% { transform: rotate(360deg) scale(1); } }
         .rotate-active { animation: spinIcon 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
+        /* KATEGORI TANPA ALL */
         .category-bar { position: sticky; top: 60px; z-index: 95; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 10px 15px; display: flex; gap: 8px; overflow-x: auto; border-bottom: var(--glass-border); scrollbar-width: none; }
         .category-bar::-webkit-scrollbar { display: none; }
         .cat-btn { white-space: nowrap; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.3s; }
@@ -69,6 +70,10 @@
         .sidebar-header { font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .chip { display: inline-block; font-size: 0.7rem; padding: 4px 10px; margin: 2px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ddd; cursor: pointer; border: 1px solid #333; transition: 0.2s; }
         .chip.active { background: var(--accent); color: black; font-weight: bold; }
+
+        /* ANIMASI DADU BERPUTAR */
+        @keyframes diceSpin { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.2); } }
+        .spinning { animation: diceSpin 0.5s ease-out; color: var(--accent) !important; }
 
         /* ANIMASI GENRE */
         #genreContainer { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; margin-bottom: 0; }
@@ -87,8 +92,6 @@
 
         .card-img-wrapper { width: 100%; aspect-ratio: 2/3; overflow: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
-        
-        /* NO COVER MODE */
         .comic-grid.no-cover .card-img-wrapper { aspect-ratio: 0; height: 0; opacity: 0; margin-bottom: 0; }
         .comic-grid.no-cover .comic-card { min-height: 100px; justify-content: center; }
         
@@ -137,13 +140,7 @@
         .detail-cover-fg { position: relative; height: 90%; width: auto; box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; cursor: zoom-in; transition: 0.3s; }
         .detail-cover-fg.zoom-active { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: contain; background: rgba(0,0,0,0.95); z-index: 9999; border: none; border-radius: 0; cursor: zoom-out; }
 
-        /* HIDDEN OVERLAY DI DETAIL (MATA TERTUTUP) */
-        .hidden-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); z-index: 5;
-            cursor: pointer; opacity: 0; pointer-events: none; transition: 0.3s;
-        }
+        .hidden-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); z-index: 5; cursor: pointer; opacity: 0; pointer-events: none; transition: 0.3s; }
         .detail-header.blurred .hidden-overlay { opacity: 1; pointer-events: auto; }
         .detail-header.blurred .detail-cover-fg { filter: blur(20px); pointer-events: none; }
         
@@ -216,8 +213,7 @@
         </header>
 
         <div class="category-bar">
-            <div class="cat-btn active" onclick="filterCategory('All', this)">All</div>
-            <div class="cat-btn" onclick="filterCategory('Manhwa', this)">Manhwa</div>
+            <div class="cat-btn active" onclick="filterCategory('Manhwa', this)">Manhwa</div>
             <div class="cat-btn" onclick="filterCategory('Manhua', this)">Manhua</div>
             <div class="cat-btn" onclick="filterCategory('Manga', this)">Manga</div>
             <div class="cat-btn" onclick="filterCategory('Doujin', this)">Doujin</div>
@@ -227,7 +223,7 @@
 
         <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header" onclick="randomizeComic()"><span>ACAK KOMIK</span><span class="material-icons">casino</span></div>
+            <div class="sidebar-header" onclick="randomizeComic()"><span>ACAK KOMIK</span><span class="material-icons" id="diceIcon">casino</span></div>
             <div class="sidebar-header" onclick="toggleGenreList()"><span>GENRE</span><span class="material-icons" id="genreToggleIcon">expand_more</span></div>
             <div id="genreContainer"></div>
             <div class="sidebar-header">URUTKAN</div>
@@ -251,7 +247,7 @@
                     <span class="material-icons">download</span> Install Aplikasi
                 </button>
                 <div style="margin-top:5px; font-size:0.7rem; color:#666; text-align:center;">
-                    My Komik Aseli<br>Versi 25.0 (Beta)
+                    My Komik Aseli<br>Versi 25.1 (Final)
                 </div>
             </div>
         </aside>
@@ -351,17 +347,16 @@
         let isBatchMode = false;
         let selectedIds = new Set();
         let currentUser = null; 
-        let currentCategory = 'All';
+        let currentCategory = 'Manhwa'; // DEFAULT SEKARANG MANHWA
         let currentDetailId = null;
         
-        // --- PWA INSTALL LOGIC (NEW) ---
         let deferredPrompt;
         const installSection = document.getElementById('installSection');
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installSection.style.display = 'block'; // Tampilkan tombol install jika browser support
+            installSection.style.display = 'block';
         });
 
         window.installPWA = async () => {
@@ -378,7 +373,6 @@
             window.showToast("Aplikasi Terinstall!");
         });
 
-        // --- MIHON IMPORT ---
         window.importMihonData = (el) => {
             if (currentUser !== 'admin') return alert("Hanya Admin yang bisa import!");
             const file = el.files[0];
@@ -525,7 +519,8 @@
             let res = comics.filter(c => {
                 const titleMatch = c.title.toLowerCase().includes(s);
                 const genreMatch = selectedGenres.size === 0 || (c.genres && c.genres.some(g => selectedGenres.has(g)));
-                const catMatch = currentCategory === 'All' || c.category === currentCategory;
+                // HAPUS LOGIKA 'ALL', HANYA SESUAI KATEGORI
+                const catMatch = c.category === currentCategory;
                 return titleMatch && genreMatch && catMatch;
             });
 
@@ -577,7 +572,6 @@
             });
         }
 
-        // --- CLOUD CRUD ---
         window.saveComicToCloud = () => {
             if(currentUser !== 'admin') return;
             const title = document.getElementById('inpTitle').value;
@@ -652,7 +646,6 @@
             }
         };
 
-        // --- BATCH & API ---
         window.toggleBatchMode = () => { 
             if(currentUser==='guest')return; 
             isBatchMode=!isBatchMode; selectedIds.clear(); 
@@ -702,7 +695,6 @@
             } catch(e) { showToast("API Error"); }
         };
 
-        // --- HELPERS ---
         window.openModal = () => { document.querySelectorAll('#comicModal input,textarea').forEach(i=>i.value=''); document.getElementById('editId').value=''; document.getElementById('btnDelete').style.display='none'; document.getElementById('comicModal').style.display='flex'; };
         window.closeModal = () => document.getElementById('comicModal').style.display='none';
         
@@ -717,10 +709,9 @@
             
             document.getElementById('detFg').classList.remove('zoom-active');
 
-            // AUTO BLUR LOGIC
+            // AUTO BLUR CHECK SAAT OPEN
             const list = document.getElementById('comicList');
             const detHeader = document.getElementById('detHeader');
-            
             if (list.classList.contains('no-cover')) {
                 detHeader.classList.add('blurred');
             } else {
@@ -752,7 +743,20 @@
             el.classList.toggle('zoom-active'); 
         };
 
-        window.closeDetail = () => document.getElementById('detailModal').style.display='none';
+        // FIX: CLOSE DETAIL RESET STATE
+        window.closeDetail = () => {
+            const modal = document.getElementById('detailModal');
+            const header = document.getElementById('detHeader');
+            const img = document.getElementById('detFg');
+            
+            modal.style.display='none';
+            // Reset Zoom
+            img.classList.remove('zoom-active');
+            // Reset Blur (Supaya tidak 'stuck' kalau buka komik lain)
+            // Blur akan diset ulang saat openDetail() dipanggil lagi.
+            header.classList.remove('blurred');
+        };
+
         window.openSourceFromDetail = () => { const c=comics.find(x=>x.id===currentDetailId); window.open(c.source || '#', '_blank'); };
         window.editFromDetail = () => {
             closeDetail();
@@ -791,7 +795,24 @@
             icon.classList.toggle('rotate');
         };
         
-        window.randomizeComic = () => { if(comics.length===0)return showToast("Kosong"); const r=Math.floor(Math.random()*comics.length); openDetail(comics[r].id); showToast("Acak!"); document.getElementById('sidebar').classList.remove('active'); };
+        // ANIMASI DADU
+        window.randomizeComic = () => { 
+            if(comics.length===0) return showToast("Kosong"); 
+            
+            const icon = document.getElementById('diceIcon');
+            icon.classList.add('spinning'); // Mulai putar
+
+            // Tunggu 0.5 detik baru buka
+            setTimeout(() => {
+                icon.classList.remove('spinning');
+                const r = Math.floor(Math.random()*comics.length);
+                openDetail(comics[r].id);
+                // Tutup sidebar otomatis biar enak
+                document.getElementById('sidebar').classList.remove('active');
+                document.querySelector('.sidebar-overlay').style.display = 'none';
+            }, 500);
+        };
+
         window.exportData = () => { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(comics)); a.download="backup_cloud.json"; a.click(); };
         window.showToast = (m) => { const x=document.getElementById('toastBox'); x.innerText=m; x.className='show'; setTimeout(()=>x.className='',3000); };
         window.openSource = (url) => { if(!url||url==='undefined')showToast("Link Kosong"); else window.open(url.startsWith('http')?url:'https://'+url, '_blank'); };
