@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Komik Library V23.1 (Turbo Import)</title>
+    <title>Komik Library V24 (Secure Blur)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -70,7 +70,7 @@
         #genreToggleIcon { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #genreToggleIcon.rotate { transform: rotate(180deg); }
 
-        /* GRID SYSTEM (4 ITEMS) */
+        /* GRID SYSTEM */
         .main-content { padding: 15px; }
         .comic-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         @media (min-width: 600px) { .comic-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; } }
@@ -81,6 +81,8 @@
 
         .card-img-wrapper { width: 100%; aspect-ratio: 2/3; overflow: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        
+        /* NO COVER MODE */
         .comic-grid.no-cover .card-img-wrapper { aspect-ratio: 0; height: 0; opacity: 0; margin-bottom: 0; }
         .comic-grid.no-cover .comic-card { min-height: 100px; justify-content: center; }
         
@@ -128,6 +130,19 @@
         
         .detail-cover-fg { position: relative; height: 90%; width: auto; box-shadow: 0 5px 25px rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 8px; z-index: 2; cursor: zoom-in; transition: 0.3s; }
         .detail-cover-fg.zoom-active { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: contain; background: rgba(0,0,0,0.95); z-index: 9999; border: none; border-radius: 0; cursor: zoom-out; }
+
+        /* HIDDEN OVERLAY DI DETAIL (MATA TERTUTUP) */
+        .hidden-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); z-index: 5;
+            cursor: pointer; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .detail-header.blurred .hidden-overlay { opacity: 1; pointer-events: auto; }
+        .detail-header.blurred .detail-cover-fg { filter: blur(20px); pointer-events: none; } /* Blur gambar asli */
+        
+        .hidden-icon { font-size: 3rem; color: #aaa; margin-bottom: 10px; }
+        .hidden-text { font-size: 0.8rem; color: #ddd; font-weight: bold; letter-spacing: 1px; }
 
         .detail-close { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 210; backdrop-filter: blur(4px); transition: 0.2s; }
         .detail-close:active { transform: scale(0.9); }
@@ -239,9 +254,14 @@
     <div class="detail-modal" id="detailModal">
         <div class="detail-content">
             <button class="detail-close" onclick="closeDetail()">×</button>
-            <div class="detail-header">
+            <div class="detail-header" id="detHeader">
                 <img id="detBg" class="detail-cover-bg" src="">
                 <img id="detFg" class="detail-cover-fg" src="" onclick="toggleZoom(this)">
+                
+                <div class="hidden-overlay" onclick="unblurDetail()">
+                    <span class="material-icons hidden-icon">visibility_off</span>
+                    <span class="hidden-text">TAP UNTUK MELIHAT</span>
+                </div>
             </div>
             <div class="detail-body">
                 <div id="detTitle" class="detail-title">Judul</div>
@@ -323,7 +343,7 @@
         let currentCategory = 'All';
         let currentDetailId = null;
 
-        // --- MIHON IMPORT FEATURE (BATCH UPDATE FIX) ---
+        // --- MIHON IMPORT ---
         window.importMihonData = (el) => {
             if (currentUser !== 'admin') return alert("Hanya Admin yang bisa import!");
             const file = el.files[0];
@@ -340,18 +360,13 @@
                     if (confirm(`Ditemukan ${backupList.length} komik. Import sekarang? (Proses Cepat)`)) {
                         window.showToast(`Memproses ${backupList.length} item...`);
                         
-                        // KUMPULKAN SEMUA DATA DULU (BATCH)
                         const updates = {};
-                        
                         for (const m of backupList) {
                             const id = m.title.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "_" + Date.now() + Math.floor(Math.random()*1000);
-                            
-                            // Map Status
                             let webStatus = "Ongoing";
                             if (m.status === 2) webStatus = "Completed";
                             else if (m.status > 2) webStatus = "Hiatus";
 
-                            // Hitung Chapter
                             const totalCh = m.chapters ? m.chapters.length : 0;
                             const readCh = m.chapters ? m.chapters.filter(c => c.read).length : 0;
 
@@ -372,12 +387,8 @@
                                 dateAdded: Date.now(),
                                 lastUpdate: Date.now()
                             };
-
-                            // Masukkan ke antrian update
                             updates['comics/' + id] = obj;
                         }
-
-                        // KIRIM SEKALI SAJA KE FIREBASE
                         await update(ref(db), updates);
                         window.showToast(`Sukses! ${backupList.length} komik masuk.`);
                     }
@@ -671,6 +682,17 @@
             
             document.getElementById('detFg').classList.remove('zoom-active');
 
+            // AUTO BLUR LOGIC
+            const list = document.getElementById('comicList');
+            const detHeader = document.getElementById('detHeader');
+            
+            // Jika grid di mode "No Cover", maka detail otomatis BLUR
+            if (list.classList.contains('no-cover')) {
+                detHeader.classList.add('blurred');
+            } else {
+                detHeader.classList.remove('blurred');
+            }
+
             const genreCt = document.getElementById('detGenres'); genreCt.innerHTML = '';
             if (c.genres && c.genres.length > 0) {
                 c.genres.forEach(g => {
@@ -687,7 +709,17 @@
             document.getElementById('detailModal').style.display = 'block';
         };
 
-        window.toggleZoom = (el) => { el.classList.toggle('zoom-active'); };
+        // NEW: UNBLUR FUNCTION
+        window.unblurDetail = () => {
+            document.getElementById('detHeader').classList.remove('blurred');
+        };
+
+        window.toggleZoom = (el) => { 
+            // Cek kalau masih blur, jangan zoom dulu
+            if(document.getElementById('detHeader').classList.contains('blurred')) return;
+            el.classList.toggle('zoom-active'); 
+        };
+
         window.closeDetail = () => document.getElementById('detailModal').style.display='none';
         window.openSourceFromDetail = () => { const c=comics.find(x=>x.id===currentDetailId); window.open(c.source || '#', '_blank'); };
         window.editFromDetail = () => {
